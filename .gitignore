@@ -37,3 +37,6 @@ lombok.config
 
 # Tests
 test-output/
+
+### Data ###
+postgres_data
