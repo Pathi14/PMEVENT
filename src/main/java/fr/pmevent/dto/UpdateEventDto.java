@@ -1,13 +1,12 @@
 package fr.pmevent.dto;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 import java.time.LocalDate;
 
 @Data
-public class EventDto {
-    @NotBlank
+public class UpdateEventDto {
+
     private String name;
     private String location;
     private LocalDate start_date;
