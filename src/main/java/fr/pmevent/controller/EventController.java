@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("events")
+@RequestMapping("/events")
 public class EventController {
 
     private EventService eventService;
@@ -23,7 +23,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAllEvent());
     }
 
-    @PostMapping("new-event")
+    @PostMapping("/new-event")
     public ResponseEntity<String> createEvent(@RequestBody @Valid CreateEventDto eventDto) {
         try {
             if (eventDto.getName() == null) {
@@ -36,15 +36,15 @@ public class EventController {
         }
     }
 
-    @PutMapping("update-event/{id}")
+    @PutMapping("/update-event/{id}")
     public ResponseEntity<String> updateEvent(@PathVariable long id, @RequestBody @Valid UpdateEventDto eventDto) {
         eventService.updateEvent(id, eventDto);
         return ResponseEntity.ok("Event sucessfully updated");
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteEvent(@PathVariable long id) {
         eventService.deleteEvent(id);
-        return ResponseEntity.ok("Event successfully created");
+        return ResponseEntity.ok("Event successfully deleted");
     }
 }

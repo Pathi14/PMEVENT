@@ -7,7 +7,7 @@ import java.time.LocalDate;
 
 @Data
 public class CreateEventDto {
-    @NotBlank
+    @NotBlank(message = "Name is required")
     private String name;
     private String location;
     private LocalDate start_date;

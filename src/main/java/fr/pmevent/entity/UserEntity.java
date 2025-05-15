@@ -5,27 +5,32 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
-@Table(name = "events")
+@Table(name = "users")
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventEntity {
+public class UserEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
+    private String firstname;
 
-    private String location;
-    private LocalDate start_date;
-    private LocalDate end_date;
-    private String description;
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<UserEventRole> userEventRoles;
 
     @Column(updatable = false)
     private LocalDateTime create_date;
@@ -41,4 +46,5 @@ public class EventEntity {
     public void onUpdate() {
         this.update_date = LocalDateTime.now();
     }
+
 }
