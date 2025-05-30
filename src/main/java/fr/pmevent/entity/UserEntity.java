@@ -30,7 +30,7 @@ public class UserEntity {
     private String password;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<UserEventRole> userEventRoles;
+    private Set<UserEventRoleEntity> userEventRoles;
 
     @Column(updatable = false)
     private LocalDateTime create_date;
