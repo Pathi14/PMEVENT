@@ -11,12 +11,13 @@ import fr.pmevent.mapper.EventMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
-import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,9 +42,7 @@ public class EventService {
         EventEntity event = eventMapper.toEntity(eventDto);
         eventRepository.save(event);
 
-        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        UserEntity user = userRepository.findByEmail(currentEmail)
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        UserEntity user = getCurrentUser();
 
         UserEventRoleEntity userEventRole = new UserEventRoleEntity();
         userEventRole.setUser(user);
@@ -54,9 +53,11 @@ public class EventService {
     }
 
     public void deleteEvent(long id) {
-        if (!eventRepository.existsById(id)) {
-            throw new EntityExistsException("This event doesn't exists");
-        }
+        EventEntity event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
+
+        UserEntity user = getCurrentUser();
+        checkPermission(event, user, EventRole.CREATOR);
 
         eventRepository.deleteById(id);
     }
@@ -65,11 +66,38 @@ public class EventService {
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
+        UserEntity user = getCurrentUser();
+        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
+
         eventMapper.updateEventFromDto(updateEvent, event);
         eventRepository.save(event);
     }
 
+    public EventEntity findEventById(Long id) {
+        EventEntity event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
+
+        UserEntity user = getCurrentUser();
+        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR, EventRole.VIEWER);
+
+        return event;
+    }
+
     public Optional<EventEntity> findByName(String name) {
         return eventRepository.findByName(name);
+    }
+
+    private UserEntity getCurrentUser() {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+    }
+
+    public void checkPermission(EventEntity event, UserEntity user, EventRole... allowedRoles) {
+        Optional<UserEventRoleEntity> roleOpt = userEventRoleRepository.findByUserAndEvent(user, event);
+
+        if (roleOpt.isEmpty() || Arrays.stream(allowedRoles).noneMatch(role -> role == roleOpt.get().getRole())) {
+            throw new AccessDeniedException("You do not have permission for this action");
+        }
     }
 }
