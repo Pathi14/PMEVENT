@@ -1,7 +1,7 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.AddGuestDto;
-import fr.pmevent.dto.UpdateGuestDto;
+import fr.pmevent.dto.guest.AddGuestDto;
+import fr.pmevent.dto.guest.UpdateGuestDto;
 import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.service.GuestService;
 import jakarta.validation.Valid;

@@ -1,13 +1,10 @@
-package fr.pmevent.dto;
+package fr.pmevent.dto.guest;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class AddGuestDto {
-    @NotBlank(message = "Name is required")
+public class UpdateGuestDto {
     private String name;
 
     private String firstname;
@@ -16,7 +13,6 @@ public class AddGuestDto {
     private String email;
     private String phone;
 
-    @NotNull(message = "number_places is required")
     private Integer number_places;
 
     private String comment;

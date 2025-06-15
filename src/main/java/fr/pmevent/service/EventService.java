@@ -1,7 +1,7 @@
 package fr.pmevent.service;
 
-import fr.pmevent.dto.CreateEventDto;
-import fr.pmevent.dto.UpdateEventDto;
+import fr.pmevent.dto.event.CreateEventDto;
+import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.entity.UserEventRoleEntity;

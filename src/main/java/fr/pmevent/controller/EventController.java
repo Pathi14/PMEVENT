@@ -1,7 +1,7 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.CreateEventDto;
-import fr.pmevent.dto.UpdateEventDto;
+import fr.pmevent.dto.event.CreateEventDto;
+import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.service.EventService;
 import jakarta.validation.Valid;

@@ -5,7 +5,7 @@ import fr.pmevent.dto.authentication.AuthResponse;
 import fr.pmevent.dto.authentication.LoginDto;
 import fr.pmevent.dto.authentication.RegisterDto;
 import fr.pmevent.entity.UserEntity;
-import fr.pmevent.repository.UserRepository;
+import fr.pmevent.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,22 +24,16 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class AuthController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody @Valid RegisterDto userDto) {
-        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Email already exists");
-        }
-        UserEntity user = new UserEntity();
-        user.setName(userDto.getName());
-        user.setEmail(userDto.getEmail());
-        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
-        userRepository.save(user);
-        return ResponseEntity.ok("User registered");
+        userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
+        UserEntity user = userService.createUser(userDto);
+        return ResponseEntity.ok("User " + user.getName() + " userregistered");
     }
 
     @PostMapping("/login")

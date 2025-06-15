@@ -1,4 +1,4 @@
-package fr.pmevent.dto;
+package fr.pmevent.dto.event;
 
 import lombok.Data;
 
