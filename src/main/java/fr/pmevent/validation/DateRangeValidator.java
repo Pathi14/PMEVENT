@@ -9,6 +9,6 @@ public class DateRangeValidator implements ConstraintValidator<ValidDateRange, H
         if (value.getStart_date() == null || value.getEnd_date() == null) {
             return true;
         }
-        return value.getStart_date().isBefore(value.getEnd_date());
+        return !value.getStart_date().isAfter(value.getEnd_date());
     }
 }
