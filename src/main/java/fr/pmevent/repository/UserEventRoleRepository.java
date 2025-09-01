@@ -11,4 +11,6 @@ import java.util.Optional;
 @Repository
 public interface UserEventRoleRepository extends JpaRepository<UserEventRoleEntity, Long> {
     Optional<UserEventRoleEntity> findByUserAndEvent(UserEntity user, EventEntity event);
+
+    void deleteAllByEvent(EventEntity event);
 }

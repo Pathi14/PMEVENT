@@ -12,6 +12,7 @@ import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -52,12 +53,15 @@ public class EventService {
         userEventRoleRepository.save(userEventRole);
     }
 
+    @Transactional
     public void deleteEvent(long id) {
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR);
+
+        userEventRoleRepository.deleteAllByEvent(event);
 
         eventRepository.deleteById(id);
     }

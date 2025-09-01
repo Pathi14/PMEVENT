@@ -10,7 +10,12 @@ import lombok.NoArgsConstructor;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "user_event_roles")
+@Table(
+        name = "user_event_roles",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"user_id", "event_id"})
+        }
+)
 public class UserEventRoleEntity {
 
     @Id
