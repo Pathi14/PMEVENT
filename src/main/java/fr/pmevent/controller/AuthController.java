@@ -33,7 +33,7 @@ public class AuthController {
     public ResponseEntity<String> register(@RequestBody @Valid RegisterDto userDto) {
         userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
         UserEntity user = userService.createUser(userDto);
-        return ResponseEntity.ok("User " + user.getName() + " userregistered");
+        return ResponseEntity.ok("User " + user.getName() + " is registered");
     }
 
     @PostMapping("/login")

@@ -9,6 +9,7 @@ import fr.pmevent.enums.EventRole;
 import fr.pmevent.exception.AlreadyExistsException;
 import fr.pmevent.mapper.EventMapper;
 import fr.pmevent.repository.EventRepository;
+import fr.pmevent.repository.GuestRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +30,7 @@ public class EventService {
     private final EventMapper eventMapper;
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
+    private final GuestRepository guestRepository;
 
     public List<EventEntity> getAllEvent() {
         return eventRepository.findAll();
@@ -61,6 +63,7 @@ public class EventService {
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR);
 
+        guestRepository.deleteAllByEvent(event);
         userEventRoleRepository.deleteAllByEvent(event);
 
         eventRepository.deleteById(id);

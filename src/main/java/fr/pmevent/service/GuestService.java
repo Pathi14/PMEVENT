@@ -29,7 +29,7 @@ public class GuestService {
 
     public GuestEntity addGuest(Long eventId, AddGuestDto guestDto) {
         EventEntity event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("You add guest if user is not valid"));
+                .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
 
         GuestEntity guest = mapToEntity(guestDto, event);
         guestRepository.save(guest);
