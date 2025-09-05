@@ -33,7 +33,14 @@ public class EventService {
     private final GuestRepository guestRepository;
 
     public List<EventEntity> getAllEvent() {
-        return eventRepository.findAll();
+        UserEntity user = getCurrentUser();
+
+        List<UserEventRoleEntity> userEventRoles = userEventRoleRepository.findByUser(user);
+        
+        return userEventRoles.stream()
+                .map(UserEventRoleEntity::getEvent)
+                .distinct()
+                .toList();
     }
 
     public void createEvent(CreateEventDto eventDto) {

@@ -45,7 +45,7 @@ public class UserEventRoleService {
 
         UserEventRoleEntity creatorRole = userEventRoleRepository
                 .findByUserAndEvent(creator, event)
-                .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
+                .orElseThrow(() -> new RuntimeException("You are not the creator of this event"));
 
         if (creatorRole.getRole() != EventRole.CREATOR) {
             throw new RuntimeException("Only CREATOR can assign roles");
