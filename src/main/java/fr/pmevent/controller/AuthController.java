@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/auth")
 @AllArgsConstructor
@@ -30,10 +32,14 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody @Valid RegisterDto userDto) {
+    public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterDto userDto) {
         userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
         UserEntity user = userService.createUser(userDto);
-        return ResponseEntity.ok("User " + user.getName() + " is registered");
+
+        String token = jwtUtil.generateToken(new org.springframework.security.core.userdetails.User(
+                user.getEmail(), user.getPassword(), List.of()
+        ));
+        return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/login")
