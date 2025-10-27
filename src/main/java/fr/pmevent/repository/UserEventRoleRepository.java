@@ -4,6 +4,8 @@ import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.entity.UserEventRoleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,4 +18,8 @@ public interface UserEventRoleRepository extends JpaRepository<UserEventRoleEnti
     List<UserEventRoleEntity> findByUser(UserEntity user);
 
     void deleteAllByEvent(EventEntity event);
+
+    @Modifying
+    @Query("DELETE FROM UserEventRoleEntity uer WHERE uer.user.id = :userId")
+    void deleteByUserId(Long userId);
 }

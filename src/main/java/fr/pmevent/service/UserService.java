@@ -4,6 +4,7 @@ import fr.pmevent.dto.authentication.RegisterDto;
 import fr.pmevent.dto.user.UpdateUser;
 import fr.pmevent.dto.user.UserResponseDto;
 import fr.pmevent.entity.UserEntity;
+import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserEventRoleRepository userEventRoleRepository;
     private final PasswordEncoder passwordEncoder;
 
     public UserResponseDto getCurrentUserInfo() {
@@ -33,6 +36,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
         return UserResponseDto.builder()
+                .id(user.getId())
                 .name(user.getName())
                 .firstname(user.getFirstname())
                 .email(user.getEmail())
@@ -55,12 +59,12 @@ public class UserService {
     }
 
     public UserEntity updateUser(Long userId, UpdateUser userDto) {
-        String connectedUSer = SecurityContextHolder.getContext().getAuthentication().getName();
+        String connectedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("This user does not exist."));
 
-        if (!user.getEmail().equals(connectedUSer)) {
+        if (!user.getEmail().equals(connectedUser)) {
             throw new AccessDeniedException("You are not allowed to update this user.");
         }
 
@@ -69,7 +73,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-
+    @Transactional
     public void delete(Long userId) {
         String connectedUSer = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -80,9 +84,10 @@ public class UserService {
             throw new AccessDeniedException("You are not allowed to update this user.");
         }
 
+        userEventRoleRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
     }
-
+    
     private static void updateFields(UpdateUser userDto, UserEntity user) {
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             user.setName(userDto.getName());

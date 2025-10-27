@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 @Data
 @Entity
@@ -26,6 +27,12 @@ public class EventEntity {
     private LocalDate start_date;
     private LocalDate end_date;
     private String description;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<GuestEntity> guests;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserEventRoleEntity> userEventRoles;
 
     @Column(updatable = false)
     private LocalDateTime create_date;

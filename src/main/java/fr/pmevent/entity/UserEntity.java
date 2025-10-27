@@ -29,7 +29,7 @@ public class UserEntity {
     @Column(nullable = false)
     private String password;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<UserEventRoleEntity> userEventRoles;
 
     @Column(updatable = false)

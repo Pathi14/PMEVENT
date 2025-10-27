@@ -1,6 +1,7 @@
 package fr.pmevent.controller;
 
 import fr.pmevent.dto.user.UpdateUser;
+import fr.pmevent.dto.user.UserResponseDto;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.service.UserService;
 import jakarta.validation.Valid;
@@ -18,6 +19,12 @@ public class UserController {
     public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody @Valid UpdateUser userDto) {
         UserEntity user = userService.updateUser(userId, userDto);
         return ResponseEntity.ok("user " + user.getName() + " successfully updated.");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser() {
+        UserResponseDto user = userService.getCurrentUserInfo();
+        return ResponseEntity.ok(user);
     }
 
     @DeleteMapping("/{userId}")
