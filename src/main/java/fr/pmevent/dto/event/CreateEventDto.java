@@ -16,4 +16,5 @@ public class CreateEventDto implements HasDateRange {
     private LocalDate start_date;
     private LocalDate end_date;
     private String description;
+    private boolean publicEvent = false;
 }

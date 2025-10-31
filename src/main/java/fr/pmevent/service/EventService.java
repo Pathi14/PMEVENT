@@ -1,6 +1,7 @@
 package fr.pmevent.service;
 
 import fr.pmevent.dto.event.CreateEventDto;
+import fr.pmevent.dto.event.EventResponse;
 import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
@@ -32,17 +33,6 @@ public class EventService {
     private final UserEventRoleRepository userEventRoleRepository;
     private final GuestRepository guestRepository;
 
-    public List<EventEntity> getAllEvent() {
-        UserEntity user = getCurrentUser();
-
-        List<UserEventRoleEntity> userEventRoles = userEventRoleRepository.findByUser(user);
-        
-        return userEventRoles.stream()
-                .map(UserEventRoleEntity::getEvent)
-                .distinct()
-                .toList();
-    }
-
     public void createEvent(CreateEventDto eventDto) {
         Optional<EventEntity> existingEvent = findByName(eventDto.getName());
         if (existingEvent.isPresent()) {
@@ -62,6 +52,17 @@ public class EventService {
         userEventRoleRepository.save(userEventRole);
     }
 
+    public void updateEvent(long id, UpdateEventDto updateEvent) {
+        EventEntity event = eventRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
+
+        UserEntity user = getCurrentUser();
+        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
+
+        eventMapper.updateEventFromDto(updateEvent, event);
+        eventRepository.save(event);
+    }
+
     @Transactional
     public void deleteEvent(long id) {
         EventEntity event = eventRepository.findById(id)
@@ -76,16 +77,6 @@ public class EventService {
         eventRepository.deleteById(id);
     }
 
-    public void updateEvent(long id, UpdateEventDto updateEvent) {
-        EventEntity event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
-
-        UserEntity user = getCurrentUser();
-        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
-
-        eventMapper.updateEventFromDto(updateEvent, event);
-        eventRepository.save(event);
-    }
 
     public EventEntity findEventById(Long id) {
         EventEntity event = eventRepository.findById(id)
@@ -95,6 +86,51 @@ public class EventService {
         checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR, EventRole.VIEWER);
 
         return event;
+    }
+
+    public List<EventResponse> getAllPublicEvents() {
+        List<EventEntity> publicEvents = eventRepository.findByPublicEventTrue();
+        return publicEvents.stream()
+                .map(eventMapper::toResponse)
+                .toList();
+    }
+
+    public List<EventResponse> getAllViewerEvents() {
+        UserEntity user = getCurrentUser();
+        List<EventRole> roles = List.of(EventRole.VIEWER, EventRole.CREATOR, EventRole.EDITOR);
+        return eventRepository.findEventsByUserAndRole(user, roles)
+                .stream()
+                .map(event -> new EventResponse(
+                        event.getId(),
+                        event.getName(),
+                        event.getLocation(),
+                        event.getStart_date(),
+                        event.getEnd_date(),
+                        event.getDescription(),
+                        event.isPublicEvent(),
+                        event.getCreate_date(),
+                        event.getUpdate_date()
+                ))
+                .toList();
+    }
+
+    public List<EventResponse> getAllEditorCreatorEvents() {
+        UserEntity user = getCurrentUser();
+        List<EventRole> roles = List.of(EventRole.CREATOR, EventRole.EDITOR);
+        return eventRepository.findEventsByUserAndRole(user, roles)
+                .stream()
+                .map(event -> new EventResponse(
+                        event.getId(),
+                        event.getName(),
+                        event.getLocation(),
+                        event.getStart_date(),
+                        event.getEnd_date(),
+                        event.getDescription(),
+                        event.isPublicEvent(),
+                        event.getCreate_date(),
+                        event.getUpdate_date()
+                ))
+                .toList();
     }
 
     public Optional<EventEntity> findByName(String name) {

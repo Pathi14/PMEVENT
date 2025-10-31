@@ -28,6 +28,9 @@ public class EventEntity {
     private LocalDate end_date;
     private String description;
 
+    @Column(nullable = false)
+    private boolean publicEvent = false;
+
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<GuestEntity> guests;
 

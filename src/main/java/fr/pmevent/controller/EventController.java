@@ -1,6 +1,7 @@
 package fr.pmevent.controller;
 
 import fr.pmevent.dto.event.CreateEventDto;
+import fr.pmevent.dto.event.EventResponse;
 import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.service.EventService;
@@ -18,15 +19,25 @@ public class EventController {
 
     private EventService eventService;
 
-    @GetMapping
-    public ResponseEntity<List<EventEntity>> getAllEvent() {
-        return ResponseEntity.ok(eventService.getAllEvent());
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<?> findEvent(@PathVariable long id) {
         EventEntity event = eventService.findEventById(id);
         return ResponseEntity.ok(event);
+    }
+
+    @GetMapping("/public")
+    public ResponseEntity<List<EventResponse>> getPublicEvents() {
+        return ResponseEntity.ok(eventService.getAllPublicEvents());
+    }
+
+    @GetMapping("/guest")
+    public ResponseEntity<List<EventResponse>> getViewerEvents() {
+        return ResponseEntity.ok(eventService.getAllViewerEvents());
+    }
+
+    @GetMapping("/administrator")
+    public ResponseEntity<List<EventResponse>> getAllEditorCreatorEvents() {
+        return ResponseEntity.ok(eventService.getAllEditorCreatorEvents());
     }
 
     @PostMapping("/new-event")
