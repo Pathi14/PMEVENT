@@ -12,7 +12,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Repository
@@ -22,14 +25,10 @@ public class UserEventRoleService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
 
-    public List<UserEventRoleEntity> findAllEvents() {
-        return userEventRoleRepository.findAll();
-    }
-
     /**
      * Assigne un rôle à un utilisateur pour un évènement.
      * Si un rôle existait déjà, il est mis à jour.
-     * Seul le CREATOR de l'évènement peut attribuer un rôle.
+     * Seuls le CREATOR les EDITORs de l'évènement peut attribuer un rôle.
      */
     public void AssignRoleToUSer(String userEmail, AssignRoleDto assignRoleDto) {
 
@@ -43,11 +42,11 @@ public class UserEventRoleService {
         UserEntity creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
-        UserEventRoleEntity creatorRole = userEventRoleRepository
+        UserEventRoleEntity currentUserRole = userEventRoleRepository
                 .findByUserAndEvent(creator, event)
                 .orElseThrow(() -> new RuntimeException("You are not the creator of this event"));
 
-        if (creatorRole.getRole() != EventRole.CREATOR) {
+        if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
             throw new RuntimeException("Only CREATOR can assign roles");
         }
 
@@ -70,7 +69,7 @@ public class UserEventRoleService {
 
     /**
      * Supprime un rôle attribué à un utilisateur sur un évènement.
-     * Seul le CREATOR peut le faire.
+     * Seuls le CREATOR et les EDITORs peut le faire.
      */
     public void removeRoleFromUser(String userEmail, Long eventId, Long userId) {
         EventEntity event = eventRepository.findById(eventId)
@@ -79,11 +78,11 @@ public class UserEventRoleService {
         UserEntity creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Creator not found"));
 
-        UserEventRoleEntity creatorRole = userEventRoleRepository
+        UserEventRoleEntity currentUserRole = userEventRoleRepository
                 .findByUserAndEvent(creator, event)
                 .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
 
-        if (creatorRole.getRole() != EventRole.CREATOR) {
+        if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
             throw new RuntimeException("Only CREATOR can remove roles");
         }
 
@@ -95,5 +94,36 @@ public class UserEventRoleService {
                 .orElseThrow(() -> new RuntimeException("This user has no role for this event"));
 
         userEventRoleRepository.delete(role);
+    }
+
+    /**
+     * Retourne la liste des rôles d’un évènement (visible uniquement pour CREATOR et EDITOR)
+     */
+    public List<Map<String, Object>> getRolesByEvent(Long eventId) {
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        List<UserEventRoleEntity> roles = userEventRoleRepository.findByEvent(event);
+
+        return roles.stream().map(role -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("userId", role.getUser().getId());
+            map.put("userEmail", role.getUser().getEmail());
+            map.put("role", role.getRole());
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Retourne le rôle du user connecté pour un évènement.
+     */
+    public Map<String, String> getMyRoleForEvent(String userEmail, Long eventId) {
+        UserEntity user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        UserEventRoleEntity role = userEventRoleRepository.findByUserAndEvent(user, event)
+                .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
+        return Map.of("role", role.getRole().name());
     }
 }

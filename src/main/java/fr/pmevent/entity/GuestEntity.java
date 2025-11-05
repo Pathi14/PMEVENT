@@ -33,8 +33,11 @@ public class GuestEntity {
     private String comment;
 
 
-    @ManyToOne
-    @JoinColumn(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, foreignKey = @ForeignKey(
+            name = "fk_guest_event",
+            foreignKeyDefinition = "FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE"
+    ))
     private EventEntity event;
 
     @Column(updatable = false)

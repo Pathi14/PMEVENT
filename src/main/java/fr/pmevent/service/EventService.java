@@ -10,7 +10,6 @@ import fr.pmevent.enums.EventRole;
 import fr.pmevent.exception.AlreadyExistsException;
 import fr.pmevent.mapper.EventMapper;
 import fr.pmevent.repository.EventRepository;
-import fr.pmevent.repository.GuestRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -31,7 +30,6 @@ public class EventService {
     private final EventMapper eventMapper;
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
-    private final GuestRepository guestRepository;
 
     public void createEvent(CreateEventDto eventDto) {
         Optional<EventEntity> existingEvent = findByName(eventDto.getName());
@@ -71,21 +69,30 @@ public class EventService {
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR);
 
-        guestRepository.deleteAllByEvent(event);
-        userEventRoleRepository.deleteAllByEvent(event);
-
-        eventRepository.deleteById(id);
+        eventRepository.delete(event);
     }
 
 
-    public EventEntity findEventById(Long id) {
+    public EventResponse findEventById(Long id) {
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
-        UserEntity user = getCurrentUser();
-        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR, EventRole.VIEWER);
+        if (!event.isPublicEvent()) {
+            UserEntity user = getCurrentUser();
+            checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR, EventRole.VIEWER);
+        }
 
-        return event;
+        return new EventResponse(
+                event.getId(),
+                event.getName(),
+                event.getLocation(),
+                event.getStart_date(),
+                event.getEnd_date(),
+                event.getDescription(),
+                event.isPublicEvent(),
+                event.getCreate_date(),
+                event.getUpdate_date()
+        );
     }
 
     public List<EventResponse> getAllPublicEvents() {

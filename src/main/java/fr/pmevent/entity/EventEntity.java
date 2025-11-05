@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -32,10 +33,10 @@ public class EventEntity {
     private boolean publicEvent = false;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<GuestEntity> guests;
+    private List<GuestEntity> guests = new ArrayList<>();
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<UserEventRoleEntity> userEventRoles;
+    private List<UserEventRoleEntity> userEventRoles = new ArrayList<>();
 
     @Column(updatable = false)
     private LocalDateTime create_date;

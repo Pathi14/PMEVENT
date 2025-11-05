@@ -26,8 +26,11 @@ public class UserEventRoleEntity {
     @JoinColumn(nullable = false)
     private UserEntity user;
 
-    @ManyToOne
-    @JoinColumn(nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false, foreignKey = @ForeignKey(
+            name = "fk_user_event_roles_event",
+            foreignKeyDefinition = "FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE"
+    ))
     private EventEntity event;
 
     @Enumerated(EnumType.STRING)

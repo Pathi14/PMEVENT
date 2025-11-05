@@ -8,13 +8,14 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserEventRoleRepository extends JpaRepository<UserEventRoleEntity, Long> {
     Optional<UserEventRoleEntity> findByUserAndEvent(UserEntity user, EventEntity event);
-    
-    void deleteAllByEvent(EventEntity event);
+
+    List<UserEventRoleEntity> findByEvent(EventEntity event);
 
     @Modifying
     @Query("DELETE FROM UserEventRoleEntity uer WHERE uer.user.id = :userId")

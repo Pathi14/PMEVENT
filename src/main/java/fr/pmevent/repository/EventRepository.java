@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Long> {
     Optional<EventEntity> findByName(String name);
-
+    
     List<EventEntity> findByPublicEventTrue();
 
     @Query("""

@@ -17,11 +17,6 @@ public class UserEventRoleController {
 
     // Tester ce service
 
-    @GetMapping
-    ResponseEntity<?> findAllEvent() {
-        return ResponseEntity.ok(userEventRoleService.findAllEvents());
-    }
-
     @PostMapping("/assign-role")
     ResponseEntity<?> AssignRoleToUser(@RequestBody @Valid AssignRoleDto assignRole) {
         try {
@@ -47,6 +42,25 @@ public class UserEventRoleController {
             userEventRoleService.removeRoleFromUser(currentUserEmail, eventId, userId);
             return ResponseEntity.ok("Role successfully removed from user");
 
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/event/{eventId}")
+    public ResponseEntity<?> getRolesByEvent(@PathVariable Long eventId) {
+        try {
+            return ResponseEntity.ok(userEventRoleService.getRolesByEvent(eventId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/my-role/{eventId}")
+    public ResponseEntity<?> getMyRoleForEvent(@PathVariable Long eventId) {
+        try {
+            String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+            return ResponseEntity.ok(userEventRoleService.getMyRoleForEvent(currentUserEmail, eventId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

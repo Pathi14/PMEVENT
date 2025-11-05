@@ -10,9 +10,10 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 
 @Service
@@ -21,7 +22,6 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
-    private final PasswordEncoder passwordEncoder;
 
     public UserResponseDto getCurrentUserInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -87,7 +87,7 @@ public class UserService {
         userEventRoleRepository.deleteByUserId(userId);
         userRepository.deleteById(userId);
     }
-    
+
     private static void updateFields(UpdateUser userDto, UserEntity user) {
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             user.setName(userDto.getName());
@@ -101,5 +101,20 @@ public class UserService {
         if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
             user.setPassword(userDto.getPassword());
         }
+    }
+
+    public List<UserResponseDto> getAllUser() {
+        List<UserEntity> users = userRepository.findAll();
+
+        return users.stream().map(user -> {
+            UserResponseDto dto = new UserResponseDto();
+            dto.setId(user.getId());
+            dto.setName(user.getName());
+            dto.setFirstname(user.getFirstname());
+            dto.setEmail(user.getEmail());
+            dto.setCreate_date(user.getCreate_date());
+            dto.setUpdate_date(user.getUpdate_date());
+            return dto;
+        }).toList();
     }
 }
