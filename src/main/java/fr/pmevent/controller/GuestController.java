@@ -1,8 +1,8 @@
 package fr.pmevent.controller;
 
 import fr.pmevent.dto.guest.AddGuestDto;
+import fr.pmevent.dto.guest.GuestResponse;
 import fr.pmevent.dto.guest.UpdateGuestDto;
-import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.service.GuestService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -18,31 +18,31 @@ public class GuestController {
     private final GuestService guestService;
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<GuestEntity>> getAllGuestOfOneEvent(@PathVariable Long eventId) {
+    public ResponseEntity<List<GuestResponse>> getAllGuestOfOneEvent(@PathVariable Long eventId) {
         return ResponseEntity.ok(guestService.getAllGuestOfOneEvent(eventId));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> findGuest(@PathVariable long id) {
-        GuestEntity guest = guestService.getGuestById(id);
+    public ResponseEntity<GuestResponse> findGuest(@PathVariable long id) {
+        GuestResponse guest = guestService.getGuestById(id);
         return ResponseEntity.ok(guest);
     }
 
     @PostMapping("/event/{eventId}/new-guest")
-    ResponseEntity<?> addGuest(@PathVariable Long eventId, @RequestBody @Valid AddGuestDto guestDto) {
-        GuestEntity guest = guestService.addGuest(eventId, guestDto);
-        return ResponseEntity.ok("Guest " + guest.getName() + " successfully added.");
+    ResponseEntity<GuestResponse> addGuest(@PathVariable Long eventId, @RequestBody @Valid AddGuestDto guestDto) {
+        GuestResponse guest = guestService.addGuest(eventId, guestDto);
+        return ResponseEntity.ok(guest);
     }
 
     @PutMapping("/{id}")
-    ResponseEntity<?> updateGuest(@PathVariable Long id, @RequestBody @Valid UpdateGuestDto guestDto) {
-        GuestEntity guest = guestService.updateGuest(id, guestDto);
-        return ResponseEntity.ok("Guest " + guest.getName() + " successfully updated.");
+    ResponseEntity<GuestResponse> updateGuest(@PathVariable Long id, @RequestBody @Valid UpdateGuestDto guestDto) {
+        GuestResponse guest = guestService.updateGuest(id, guestDto);
+        return ResponseEntity.ok(guest);
     }
 
     @DeleteMapping("/{id}")
-    ResponseEntity<?> removeGuest(@PathVariable Long id) {
+    ResponseEntity<Void> removeGuest(@PathVariable Long id) {
         guestService.removeGuest(id);
-        return ResponseEntity.ok("Guest removed successfully.");
+        return ResponseEntity.noContent().build();
     }
 }

@@ -44,24 +44,31 @@ public class EventController {
     public ResponseEntity<?> createEvent(@RequestBody @Valid CreateEventDto eventDto) {
         try {
             if (eventDto.getName() == null) {
-                return ResponseEntity.badRequest().body("name event is empty");
+                return ResponseEntity.badRequest().body("Le nom est obligatoire");
             }
-            eventService.createEvent(eventDto);
-            return ResponseEntity.ok(Map.of("message", "Event successfully created", "eventName", eventDto.getName()));
+            EventResponse event = eventService.createEvent(eventDto);
+            return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     @PutMapping("/update-event/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable long id, @RequestBody @Valid UpdateEventDto eventDto) {
-        eventService.updateEvent(id, eventDto);
-        return ResponseEntity.ok(Map.of("message", "Event successfully updated", "eventName", eventDto.getName()));
+        try {
+            if (eventDto.getName() == null) {
+                return ResponseEntity.badRequest().body("Le nom est obligatoire");
+            }
+            EventResponse event = eventService.updateEvent(id, eventDto);
+            return ResponseEntity.ok(event);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteEvent(@PathVariable long id) {
+    public ResponseEntity<Void> deleteEvent(@PathVariable long id) {
         eventService.deleteEvent(id);
-        return ResponseEntity.ok(Map.of("message", "Event successfully deleted"));
+        return ResponseEntity.noContent().build();
     }
 }

@@ -9,12 +9,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Long> {
-    Optional<EventEntity> findByName(String name);
-    
+    boolean existsByName(String name);
+
     List<EventEntity> findByPublicEventTrue();
 
     @Query("""

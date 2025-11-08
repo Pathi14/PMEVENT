@@ -21,13 +21,13 @@ public class UserEventRoleController {
     ResponseEntity<?> AssignRoleToUser(@RequestBody @Valid AssignRoleDto assignRole) {
         try {
             if (assignRole.getEventId() == null || assignRole.getUserId() == null || assignRole.getRole() == null) {
-                return ResponseEntity.badRequest().body("Request is invalid");
+                return ResponseEntity.badRequest().body("Requête invalide");
             }
 
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
             userEventRoleService.AssignRoleToUSer(currentUserEmail, assignRole);
-            return ResponseEntity.ok("Role successfully assigned to user");
+            return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -40,7 +40,7 @@ public class UserEventRoleController {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
             userEventRoleService.removeRoleFromUser(currentUserEmail, eventId, userId);
-            return ResponseEntity.ok("Role successfully removed from user");
+            return ResponseEntity.ok().build();
 
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

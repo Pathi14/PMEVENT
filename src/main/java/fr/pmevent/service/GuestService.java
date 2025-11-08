@@ -1,9 +1,11 @@
 package fr.pmevent.service;
 
 import fr.pmevent.dto.guest.AddGuestDto;
+import fr.pmevent.dto.guest.GuestResponse;
 import fr.pmevent.dto.guest.UpdateGuestDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
+import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
 import jakarta.validation.Valid;
@@ -17,34 +19,39 @@ import java.util.List;
 public class GuestService {
     private GuestRepository guestRepository;
     private EventRepository eventRepository;
+    private GuestMapper guestMapper;
 
-    public List<GuestEntity> getAllGuestOfOneEvent(Long eventId) {
-        return guestRepository.findByEventId(eventId);
+    public List<GuestResponse> getAllGuestOfOneEvent(Long eventId) {
+        List<GuestEntity> guests = guestRepository.findByEventId(eventId);
+        return guests.stream()
+                .map(guestMapper::toResponse)
+                .toList();
     }
 
-    public GuestEntity getGuestById(Long id) {
-        return guestRepository.findById(id)
+    public GuestResponse getGuestById(Long id) {
+        GuestEntity guest = guestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This guest doesn't exit."));
+        return guestMapper.toResponse(guest);
     }
 
-    public GuestEntity addGuest(Long eventId, AddGuestDto guestDto) {
+    public GuestResponse addGuest(Long eventId, AddGuestDto guestDto) {
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
 
         GuestEntity guest = mapToEntity(guestDto, event);
         guestRepository.save(guest);
 
-        return guest;
+        return guestMapper.toResponse(guest);
     }
 
-    public GuestEntity updateGuest(Long id, @Valid UpdateGuestDto guestDto) {
+    public GuestResponse updateGuest(Long id, @Valid UpdateGuestDto guestDto) {
         GuestEntity guest = guestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("this guest does not exist"));
 
         updateFields(guestDto, guest);
-        guestRepository.save(guest);
+        GuestEntity guestUpdated = guestRepository.save(guest);
 
-        return guest;
+        return guestMapper.toResponse(guestUpdated);
     }
 
     public void removeGuest(Long id) {

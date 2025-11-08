@@ -31,14 +31,13 @@ public class EventService {
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
 
-    public void createEvent(CreateEventDto eventDto) {
-        Optional<EventEntity> existingEvent = findByName(eventDto.getName());
-        if (existingEvent.isPresent()) {
-            throw new AlreadyExistsException("Event already exists");
+    public EventResponse createEvent(CreateEventDto eventDto) {
+        if (eventRepository.existsByName(eventDto.getName())) {
+            throw new AlreadyExistsException("Un évènement avec ce nom existe déjà.");
         }
 
         EventEntity event = eventMapper.toEntity(eventDto);
-        eventRepository.save(event);
+        EventEntity eventCreated = eventRepository.save(event);
 
         UserEntity user = getCurrentUser();
 
@@ -48,17 +47,25 @@ public class EventService {
         userEventRole.setRole(EventRole.CREATOR);
 
         userEventRoleRepository.save(userEventRole);
+
+        return eventMapper.toResponse(eventCreated);
     }
 
-    public void updateEvent(long id, UpdateEventDto updateEvent) {
+    public EventResponse updateEvent(long id, UpdateEventDto updateEvent) {
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
 
+        if (eventRepository.existsByName(updateEvent.getName())) {
+            throw new AlreadyExistsException("Un évènement avec ce nom existe déjà.");
+        }
+
         eventMapper.updateEventFromDto(updateEvent, event);
-        eventRepository.save(event);
+        EventEntity eventUpdated = eventRepository.save(event);
+
+        return eventMapper.toResponse(eventUpdated);
     }
 
     @Transactional
@@ -138,10 +145,6 @@ public class EventService {
                         event.getUpdate_date()
                 ))
                 .toList();
-    }
-
-    public Optional<EventEntity> findByName(String name) {
-        return eventRepository.findByName(name);
     }
 
     private UserEntity getCurrentUser() {

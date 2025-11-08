@@ -2,7 +2,6 @@ package fr.pmevent.controller;
 
 import fr.pmevent.dto.user.UpdateUser;
 import fr.pmevent.dto.user.UserResponseDto;
-import fr.pmevent.entity.UserEntity;
 import fr.pmevent.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -23,9 +22,9 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody @Valid UpdateUser userDto) {
-        UserEntity user = userService.updateUser(userId, userDto);
-        return ResponseEntity.ok("user " + user.getName() + " successfully updated.");
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long userId, @RequestBody @Valid UpdateUser userDto) {
+        UserResponseDto user = userService.updateUser(userId, userDto);
+        return ResponseEntity.ok(user);
     }
 
     @GetMapping("/me")
@@ -35,8 +34,8 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.delete(userId);
-        return ResponseEntity.ok("user delete successfully.");
+        return ResponseEntity.noContent().build();
     }
 }

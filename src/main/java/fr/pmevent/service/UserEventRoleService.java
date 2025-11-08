@@ -47,7 +47,16 @@ public class UserEventRoleService {
                 .orElseThrow(() -> new RuntimeException("You are not the creator of this event"));
 
         if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
-            throw new RuntimeException("Only CREATOR can assign roles");
+            throw new RuntimeException("Seuls le créateur et les éditeurs peuvent attribuer des rôles");
+        }
+
+        // Ne pas modifier le rôle du créateur
+        UserEventRoleEntity targetRole = userEventRoleRepository
+                .findByUserAndEvent(targetUser, event)
+                .orElse(null);
+
+        if (targetRole != null && targetRole.getRole() == EventRole.CREATOR) {
+            throw new RuntimeException("Le rôle du créateur de l'évènement ne peut pas être modifié.");
         }
 
         //Vérifier si l'utilisateur à un rôle alors faire une mise à jour sinon lui attribuer un rôle
@@ -83,7 +92,7 @@ public class UserEventRoleService {
                 .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
 
         if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
-            throw new RuntimeException("Only CREATOR can remove roles");
+            throw new RuntimeException("Seuls le créateur et les éditeurs peuvent rétirer des rôles");
         }
 
         UserEntity targetUser = userRepository.findById(userId)

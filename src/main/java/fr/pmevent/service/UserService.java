@@ -4,6 +4,7 @@ import fr.pmevent.dto.authentication.RegisterDto;
 import fr.pmevent.dto.user.UpdateUser;
 import fr.pmevent.dto.user.UserResponseDto;
 import fr.pmevent.entity.UserEntity;
+import fr.pmevent.mapper.UserMapper;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,22 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
+    private final UserMapper userMapper;
+
+    public List<UserResponseDto> getAllUser() {
+        List<UserEntity> users = userRepository.findAll();
+
+        return users.stream().map(user -> {
+            UserResponseDto dto = new UserResponseDto();
+            dto.setId(user.getId());
+            dto.setName(user.getName());
+            dto.setFirstname(user.getFirstname());
+            dto.setEmail(user.getEmail());
+            dto.setCreate_date(user.getCreate_date());
+            dto.setUpdate_date(user.getUpdate_date());
+            return dto;
+        }).toList();
+    }
 
     public UserResponseDto getCurrentUserInfo() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -35,14 +52,7 @@ public class UserService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
-        return UserResponseDto.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .firstname(user.getFirstname())
-                .email(user.getEmail())
-                .create_date(user.getCreate_date())
-                .update_date(user.getUpdate_date())
-                .build();
+        return userMapper.toResponse(user);
     }
 
     public UserEntity createUser(RegisterDto userDto) {
@@ -58,7 +68,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public UserEntity updateUser(Long userId, UpdateUser userDto) {
+    public UserResponseDto updateUser(Long userId, UpdateUser userDto) {
         String connectedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         UserEntity user = userRepository.findById(userId)
@@ -70,7 +80,7 @@ public class UserService {
 
         updateFields(userDto, user);
 
-        return userRepository.save(user);
+        return userMapper.toResponse(userRepository.save(user));
     }
 
     @Transactional
@@ -101,20 +111,5 @@ public class UserService {
         if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
             user.setPassword(userDto.getPassword());
         }
-    }
-
-    public List<UserResponseDto> getAllUser() {
-        List<UserEntity> users = userRepository.findAll();
-
-        return users.stream().map(user -> {
-            UserResponseDto dto = new UserResponseDto();
-            dto.setId(user.getId());
-            dto.setName(user.getName());
-            dto.setFirstname(user.getFirstname());
-            dto.setEmail(user.getEmail());
-            dto.setCreate_date(user.getCreate_date());
-            dto.setUpdate_date(user.getUpdate_date());
-            return dto;
-        }).toList();
     }
 }
