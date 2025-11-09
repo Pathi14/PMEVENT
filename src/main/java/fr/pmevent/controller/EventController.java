@@ -56,9 +56,6 @@ public class EventController {
     @PutMapping("/update-event/{id}")
     public ResponseEntity<?> updateEvent(@PathVariable long id, @RequestBody @Valid UpdateEventDto eventDto) {
         try {
-            if (eventDto.getName() == null) {
-                return ResponseEntity.badRequest().body("Le nom est obligatoire");
-            }
             EventResponse event = eventService.updateEvent(id, eventDto);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {

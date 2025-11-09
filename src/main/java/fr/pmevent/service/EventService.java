@@ -58,7 +58,9 @@ public class EventService {
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
 
-        if (eventRepository.existsByName(updateEvent.getName())) {
+        if (updateEvent.getName() != null &&
+                eventRepository.existsByName(updateEvent.getName()) &&
+                !updateEvent.getName().equals(event.getName())) {
             throw new AlreadyExistsException("Un évènement avec ce nom existe déjà.");
         }
 
