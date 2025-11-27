@@ -19,9 +19,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -37,6 +43,23 @@ public class EventService {
         }
 
         EventEntity event = eventMapper.toEntity(eventDto);
+
+        if (eventDto.getImage() != null && !eventDto.getImage().isEmpty()) {
+            String fileName = UUID.randomUUID() + "_" + eventDto.getImage().getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/events");
+
+            try {
+                Files.createDirectories(uploadPath);
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(eventDto.getImage().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                event.setImageUrl("/uploads/events/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors de l'upload de l'image");
+            }
+        }
+
         EventEntity eventCreated = eventRepository.save(event);
 
         UserEntity user = getCurrentUser();
@@ -99,6 +122,7 @@ public class EventService {
                 event.getEnd_date(),
                 event.getDescription(),
                 event.isPublicEvent(),
+                event.getImageUrl(),
                 event.getCreate_date(),
                 event.getUpdate_date()
         );
@@ -124,6 +148,7 @@ public class EventService {
                         event.getEnd_date(),
                         event.getDescription(),
                         event.isPublicEvent(),
+                        event.getImageUrl(),
                         event.getCreate_date(),
                         event.getUpdate_date()
                 ))
@@ -143,6 +168,7 @@ public class EventService {
                         event.getEnd_date(),
                         event.getDescription(),
                         event.isPublicEvent(),
+                        event.getImageUrl(),
                         event.getCreate_date(),
                         event.getUpdate_date()
                 ))

@@ -4,6 +4,7 @@ import fr.pmevent.validation.HasDateRange;
 import fr.pmevent.validation.ValidDateRange;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -17,4 +18,5 @@ public class CreateEventDto implements HasDateRange {
     private LocalDate end_date;
     private String description;
     private boolean publicEvent = false;
+    private MultipartFile image;
 }

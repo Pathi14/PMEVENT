@@ -6,6 +6,7 @@ import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.service.EventService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,8 +41,11 @@ public class EventController {
         return ResponseEntity.ok(eventService.getAllEditorCreatorEvents());
     }
 
-    @PostMapping("/new-event")
-    public ResponseEntity<?> createEvent(@RequestBody @Valid CreateEventDto eventDto) {
+    @PostMapping(
+            value = "/new-event",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<?> createEvent(@ModelAttribute CreateEventDto eventDto) {
         try {
             if (eventDto.getName() == null) {
                 return ResponseEntity.badRequest().body("Le nom est obligatoire");

@@ -11,6 +11,7 @@ public record EventResponse(
         LocalDate end_date,
         String description,
         boolean publicEvent,
+        String imageUrl,
         LocalDateTime create_date,
         LocalDateTime update_date
 ) {

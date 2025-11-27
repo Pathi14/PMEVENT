@@ -28,6 +28,7 @@ public class EventEntity {
     private LocalDate start_date;
     private LocalDate end_date;
     private String description;
+    private String imageUrl;
 
     @Column(nullable = false)
     private boolean publicEvent = false;
