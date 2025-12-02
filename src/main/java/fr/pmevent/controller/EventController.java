@@ -1,7 +1,7 @@
 package fr.pmevent.controller;
 
 import fr.pmevent.dto.event.CreateEventDto;
-import fr.pmevent.dto.event.EventResponse;
+import fr.pmevent.dto.event.EventResponseDto;
 import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.service.EventService;
 import lombok.AllArgsConstructor;
@@ -20,23 +20,23 @@ public class EventController {
     private EventService eventService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventResponse> findEvent(@PathVariable long id) {
-        EventResponse event = eventService.findEventById(id);
+    public ResponseEntity<EventResponseDto> findEvent(@PathVariable long id) {
+        EventResponseDto event = eventService.findEventById(id);
         return ResponseEntity.ok(event);
     }
 
     @GetMapping("/public")
-    public ResponseEntity<List<EventResponse>> getPublicEvents() {
+    public ResponseEntity<List<EventResponseDto>> getPublicEvents() {
         return ResponseEntity.ok(eventService.getAllPublicEvents());
     }
 
     @GetMapping("/guest")
-    public ResponseEntity<List<EventResponse>> getViewerEvents() {
+    public ResponseEntity<List<EventResponseDto>> getViewerEvents() {
         return ResponseEntity.ok(eventService.getAllViewerEvents());
     }
 
     @GetMapping("/administrator")
-    public ResponseEntity<List<EventResponse>> getAllEditorCreatorEvents() {
+    public ResponseEntity<List<EventResponseDto>> getAllEditorCreatorEvents() {
         return ResponseEntity.ok(eventService.getAllEditorCreatorEvents());
     }
 
@@ -49,7 +49,7 @@ public class EventController {
             if (eventDto.getName() == null) {
                 return ResponseEntity.badRequest().body("Le nom est obligatoire");
             }
-            EventResponse event = eventService.createEvent(eventDto);
+            EventResponseDto event = eventService.createEvent(eventDto);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -65,7 +65,7 @@ public class EventController {
             @ModelAttribute UpdateEventDto eventDto
     ) {
         try {
-            EventResponse event = eventService.updateEvent(id, eventDto);
+            EventResponseDto event = eventService.updateEvent(id, eventDto);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

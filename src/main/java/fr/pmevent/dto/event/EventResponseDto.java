@@ -3,7 +3,7 @@ package fr.pmevent.dto.event;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public record EventResponse(
+public record EventResponseDto(
         Long id,
         String name,
         String location,

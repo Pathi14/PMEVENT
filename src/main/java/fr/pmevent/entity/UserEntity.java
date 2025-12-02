@@ -22,6 +22,7 @@ public class UserEntity {
     @Column(nullable = false)
     private String name;
     private String firstname;
+    private String photoUrl;
 
     @Column(unique = true, nullable = false)
     private String email;

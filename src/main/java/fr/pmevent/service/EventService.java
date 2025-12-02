@@ -1,7 +1,7 @@
 package fr.pmevent.service;
 
 import fr.pmevent.dto.event.CreateEventDto;
-import fr.pmevent.dto.event.EventResponse;
+import fr.pmevent.dto.event.EventResponseDto;
 import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
@@ -37,7 +37,7 @@ public class EventService {
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
 
-    public EventResponse createEvent(CreateEventDto eventDto) {
+    public EventResponseDto createEvent(CreateEventDto eventDto) {
         if (eventRepository.existsByName(eventDto.getName())) {
             throw new AlreadyExistsException("Un évènement avec ce nom existe déjà.");
         }
@@ -74,7 +74,7 @@ public class EventService {
         return eventMapper.toResponse(eventCreated);
     }
 
-    public EventResponse updateEvent(long id, UpdateEventDto updateEvent) {
+    public EventResponseDto updateEvent(long id, UpdateEventDto updateEvent) {
 
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
@@ -100,7 +100,7 @@ public class EventService {
                             .resolve(Paths.get(event.getImageUrl()).getFileName().toString());
                     Files.deleteIfExists(oldImagePath);
                 }
-                
+
                 String fileName = UUID.randomUUID() + "_" + updateEvent.getImage().getOriginalFilename();
                 Path uploadPath = Paths.get("uploads/events");
 
@@ -133,7 +133,7 @@ public class EventService {
     }
 
 
-    public EventResponse findEventById(Long id) {
+    public EventResponseDto findEventById(Long id) {
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
@@ -142,7 +142,7 @@ public class EventService {
             checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR, EventRole.VIEWER);
         }
 
-        return new EventResponse(
+        return new EventResponseDto(
                 event.getId(),
                 event.getName(),
                 event.getLocation(),
@@ -156,19 +156,19 @@ public class EventService {
         );
     }
 
-    public List<EventResponse> getAllPublicEvents() {
+    public List<EventResponseDto> getAllPublicEvents() {
         List<EventEntity> publicEvents = eventRepository.findByPublicEventTrue();
         return publicEvents.stream()
                 .map(eventMapper::toResponse)
                 .toList();
     }
 
-    public List<EventResponse> getAllViewerEvents() {
+    public List<EventResponseDto> getAllViewerEvents() {
         UserEntity user = getCurrentUser();
         List<EventRole> roles = List.of(EventRole.VIEWER, EventRole.CREATOR, EventRole.EDITOR);
         return eventRepository.findEventsByUserAndRole(user, roles)
                 .stream()
-                .map(event -> new EventResponse(
+                .map(event -> new EventResponseDto(
                         event.getId(),
                         event.getName(),
                         event.getLocation(),
@@ -183,12 +183,12 @@ public class EventService {
                 .toList();
     }
 
-    public List<EventResponse> getAllEditorCreatorEvents() {
+    public List<EventResponseDto> getAllEditorCreatorEvents() {
         UserEntity user = getCurrentUser();
         List<EventRole> roles = List.of(EventRole.CREATOR, EventRole.EDITOR);
         return eventRepository.findEventsByUserAndRole(user, roles)
                 .stream()
-                .map(event -> new EventResponse(
+                .map(event -> new EventResponseDto(
                         event.getId(),
                         event.getName(),
                         event.getLocation(),

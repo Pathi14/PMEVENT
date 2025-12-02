@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 public class UserResponseDto {
     private Long id;
     private String name;
+    private String photoUrl;
     private String firstname;
     private String email;
     private LocalDateTime create_date;

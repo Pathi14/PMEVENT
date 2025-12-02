@@ -14,7 +14,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -110,6 +116,27 @@ public class UserService {
         }
         if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
             user.setPassword(userDto.getPassword());
+        }
+        if (userDto.getPhoto() != null && !userDto.getPhoto().isEmpty()) {
+            try {
+                if (user.getPhotoUrl() != null) {
+                    Path oldImagePath = Paths.get("uploads/users")
+                            .resolve(Paths.get(user.getPhotoUrl()).getFileName().toString());
+                    Files.deleteIfExists(oldImagePath);
+                }
+
+                String fileName = UUID.randomUUID() + "_" + userDto.getPhoto().getOriginalFilename();
+                Path uploadPath = Paths.get("uploads/users");
+
+                Files.createDirectories(uploadPath);
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(userDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                user.setPhotoUrl("/uploads/users/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors du chargement de la photo", e);
+            }
         }
     }
 }
