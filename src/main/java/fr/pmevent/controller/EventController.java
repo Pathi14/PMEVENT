@@ -4,7 +4,6 @@ import fr.pmevent.dto.event.CreateEventDto;
 import fr.pmevent.dto.event.EventResponse;
 import fr.pmevent.dto.event.UpdateEventDto;
 import fr.pmevent.service.EventService;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,8 +56,14 @@ public class EventController {
         }
     }
 
-    @PutMapping("/update-event/{id}")
-    public ResponseEntity<?> updateEvent(@PathVariable long id, @RequestBody @Valid UpdateEventDto eventDto) {
+    @PutMapping(
+            value = "/update-event/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<?> updateEvent(
+            @PathVariable long id,
+            @ModelAttribute UpdateEventDto eventDto
+    ) {
         try {
             EventResponse event = eventService.updateEvent(id, eventDto);
             return ResponseEntity.ok(event);

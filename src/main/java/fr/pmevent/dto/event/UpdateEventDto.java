@@ -3,6 +3,7 @@ package fr.pmevent.dto.event;
 import fr.pmevent.validation.HasDateRange;
 import fr.pmevent.validation.ValidDateRange;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 
@@ -16,4 +17,6 @@ public class UpdateEventDto implements HasDateRange {
     private LocalDate end_date;
     private String description;
     private boolean publicEvent;
+    private MultipartFile image;
+
 }

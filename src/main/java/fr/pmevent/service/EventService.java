@@ -75,23 +75,51 @@ public class EventService {
     }
 
     public EventResponse updateEvent(long id, UpdateEventDto updateEvent) {
+
         EventEntity event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("This event doesn't exists"));
 
         UserEntity user = getCurrentUser();
         checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
 
+        // Vérification du nom
         if (updateEvent.getName() != null &&
                 eventRepository.existsByName(updateEvent.getName()) &&
                 !updateEvent.getName().equals(event.getName())) {
             throw new AlreadyExistsException("Un évènement avec ce nom existe déjà.");
         }
 
+        // Mise à jour champs textuels
         eventMapper.updateEventFromDto(updateEvent, event);
-        EventEntity eventUpdated = eventRepository.save(event);
 
+        // Mise à jour de l'image
+        if (updateEvent.getImage() != null && !updateEvent.getImage().isEmpty()) {
+            try {
+                if (event.getImageUrl() != null) {
+                    Path oldImagePath = Paths.get("uploads/events")
+                            .resolve(Paths.get(event.getImageUrl()).getFileName().toString());
+                    Files.deleteIfExists(oldImagePath);
+                }
+                
+                String fileName = UUID.randomUUID() + "_" + updateEvent.getImage().getOriginalFilename();
+                Path uploadPath = Paths.get("uploads/events");
+
+                Files.createDirectories(uploadPath);
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(updateEvent.getImage().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                event.setImageUrl("/uploads/events/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors de l'upload de l'image", e);
+            }
+        }
+
+
+        EventEntity eventUpdated = eventRepository.save(event);
         return eventMapper.toResponse(eventUpdated);
     }
+
 
     @Transactional
     public void deleteEvent(long id) {
