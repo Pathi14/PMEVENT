@@ -38,6 +38,22 @@ public class UserController {
         }
     }
 
+    @PostMapping("/{id}/verify-password")
+    public ResponseEntity<?> verifyPassword(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> request
+    ) {
+        String currentPassword = request.get("currentPassword");
+
+        boolean valid = userService.verifyPassword(id, currentPassword);
+
+        if (valid) {
+            return ResponseEntity.ok(Map.of("valid", true));
+        } else {
+            return ResponseEntity.ok(Map.of("valid", false));
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserResponseDto> getCurrentUser() {
         UserResponseDto user = userService.getCurrentUserInfo();

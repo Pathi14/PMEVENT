@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     public List<UserResponseDto> getAllUser() {
         List<UserEntity> users = userRepository.findAll();
@@ -89,6 +91,14 @@ public class UserService {
         return userMapper.toResponse(userRepository.save(user));
     }
 
+    public boolean verifyPassword(Long id, String currentPassword) {
+        UserEntity user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        return passwordEncoder.matches(currentPassword, user.getPassword());
+    }
+
+
     @Transactional
     public void delete(Long userId) {
         String connectedUSer = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -104,7 +114,7 @@ public class UserService {
         userRepository.deleteById(userId);
     }
 
-    private static void updateFields(UpdateUser userDto, UserEntity user) {
+    private void updateFields(UpdateUser userDto, UserEntity user) {
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             user.setName(userDto.getName());
         }
@@ -115,7 +125,7 @@ public class UserService {
             user.setEmail(userDto.getEmail());
         }
         if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
-            user.setPassword(userDto.getPassword());
+            user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
         if (userDto.getPhoto() != null && !userDto.getPhoto().isEmpty()) {
             try {
