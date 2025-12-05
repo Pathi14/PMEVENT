@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class AddGuestDto {
@@ -20,4 +21,5 @@ public class AddGuestDto {
     private Integer number_places;
 
     private String comment;
+    private MultipartFile photo;
 }

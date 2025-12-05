@@ -8,11 +8,16 @@ import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -39,12 +44,40 @@ public class GuestService {
                 .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
 
         GuestEntity guest = mapToEntity(guestDto, event);
-        guestRepository.save(guest);
 
+        String contentType = guestDto.getPhoto().getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Le fichier doit être une image (PNG, JPG, JPEG).");
+        }
+
+        if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+            try {
+                if (guest.getPhotoUrl() != null) {
+                    Path oldImagePath = Paths.get("uploads/users")
+                            .resolve(Paths.get(guest.getPhotoUrl()).getFileName().toString());
+                    Files.deleteIfExists(oldImagePath);
+                }
+
+                String fileName = UUID.randomUUID() + "_" + guestDto.getPhoto().getOriginalFilename();
+                Path uploadPath = Paths.get("uploads/guests");
+
+                Files.createDirectories(uploadPath);
+
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(guestDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                guest.setPhotoUrl("/uploads/guests/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors du chargement de la photo", e);
+            }
+        }
+
+        guestRepository.save(guest);
         return guestMapper.toResponse(guest);
     }
 
-    public GuestResponse updateGuest(Long id, @Valid UpdateGuestDto guestDto) {
+    public GuestResponse updateGuest(Long id, UpdateGuestDto guestDto) {
         GuestEntity guest = guestRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("this guest does not exist"));
 
@@ -90,6 +123,27 @@ public class GuestService {
         }
         if (guestDto.getComment() != null && !guestDto.getComment().isBlank()) {
             guest.setComment(guestDto.getComment());
+        }
+        if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+            try {
+                if (guest.getPhotoUrl() != null) {
+                    Path oldImagePath = Paths.get("uploads/guests")
+                            .resolve(Paths.get(guest.getPhotoUrl()).getFileName().toString());
+                    Files.deleteIfExists(oldImagePath);
+                }
+
+                String fileName = UUID.randomUUID() + "_" + guestDto.getPhoto().getOriginalFilename();
+                Path uploadPath = Paths.get("uploads/guests");
+
+                Files.createDirectories(uploadPath);
+                Path filePath = uploadPath.resolve(fileName);
+                Files.copy(guestDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+                guest.setPhotoUrl("/uploads/guests/" + fileName);
+
+            } catch (IOException e) {
+                throw new RuntimeException("Erreur lors du chargement de la photo", e);
+            }
         }
     }
 }

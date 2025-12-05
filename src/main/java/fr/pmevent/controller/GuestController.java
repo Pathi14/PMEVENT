@@ -4,12 +4,13 @@ import fr.pmevent.dto.guest.AddGuestDto;
 import fr.pmevent.dto.guest.GuestResponse;
 import fr.pmevent.dto.guest.UpdateGuestDto;
 import fr.pmevent.service.GuestService;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/guests")
@@ -28,16 +29,32 @@ public class GuestController {
         return ResponseEntity.ok(guest);
     }
 
-    @PostMapping("/event/{eventId}/new-guest")
-    ResponseEntity<GuestResponse> addGuest(@PathVariable Long eventId, @RequestBody @Valid AddGuestDto guestDto) {
+    @PostMapping(
+            value = "/event/{eventId}/new-guest",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    ResponseEntity<GuestResponse> addGuest(
+            @PathVariable Long eventId,
+            @ModelAttribute AddGuestDto guestDto
+    ) {
         GuestResponse guest = guestService.addGuest(eventId, guestDto);
         return ResponseEntity.ok(guest);
     }
 
-    @PutMapping("/{id}")
-    ResponseEntity<GuestResponse> updateGuest(@PathVariable Long id, @RequestBody @Valid UpdateGuestDto guestDto) {
-        GuestResponse guest = guestService.updateGuest(id, guestDto);
-        return ResponseEntity.ok(guest);
+    @PutMapping(
+            value = "/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    ResponseEntity<?> updateGuest(
+            @PathVariable Long id,
+            @ModelAttribute UpdateGuestDto guestDto
+    ) {
+        try {
+            GuestResponse guest = guestService.updateGuest(id, guestDto);
+            return ResponseEntity.ok(guest);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/{id}")

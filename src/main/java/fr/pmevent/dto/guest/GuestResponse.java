@@ -7,6 +7,7 @@ public record GuestResponse(
         String email,
         String phone,
         Integer number_places,
-        String comment
+        String comment,
+        String photoUrl
 ) {
 }

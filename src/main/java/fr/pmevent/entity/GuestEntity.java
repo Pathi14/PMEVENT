@@ -31,6 +31,7 @@ public class GuestEntity {
     @Column(nullable = false)
     private Integer number_places;
     private String comment;
+    private String photoUrl;
 
 
     @ManyToOne(fetch = FetchType.LAZY)

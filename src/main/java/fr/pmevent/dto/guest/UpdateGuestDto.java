@@ -2,6 +2,7 @@ package fr.pmevent.dto.guest;
 
 import jakarta.validation.constraints.Email;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class UpdateGuestDto {
@@ -16,4 +17,5 @@ public class UpdateGuestDto {
     private Integer number_places;
 
     private String comment;
+    private MultipartFile photo;
 }
