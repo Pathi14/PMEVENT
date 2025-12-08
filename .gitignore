@@ -41,3 +41,5 @@ test-output/
 ### Data ###
 postgres_data
 brunoPMEVENT
+
+src/main/resources/application-dev.yml

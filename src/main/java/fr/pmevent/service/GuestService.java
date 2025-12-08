@@ -8,6 +8,7 @@ import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
+import fr.pmevent.util.StringUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class GuestService {
     private GuestRepository guestRepository;
     private EventRepository eventRepository;
     private GuestMapper guestMapper;
+    private final MailService mailService;
 
     public List<GuestResponse> getAllGuestOfOneEvent(Long eventId) {
         List<GuestEntity> guests = guestRepository.findByEventId(eventId);
@@ -40,20 +42,23 @@ public class GuestService {
     }
 
     public GuestResponse addGuest(Long eventId, AddGuestDto guestDto) {
+
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
 
         GuestEntity guest = mapToEntity(guestDto, event);
 
-        String contentType = guestDto.getPhoto().getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new RuntimeException("Le fichier doit être une image (PNG, JPG, JPEG).");
-        }
-
+        // Vérifier si une photo est envoyée
         if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+
+            String contentType = guestDto.getPhoto().getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new RuntimeException("Le fichier doit être une image (PNG, JPG, JPEG).");
+            }
+
             try {
                 if (guest.getPhotoUrl() != null) {
-                    Path oldImagePath = Paths.get("uploads/users")
+                    Path oldImagePath = Paths.get("uploads/guests")
                             .resolve(Paths.get(guest.getPhotoUrl()).getFileName().toString());
                     Files.deleteIfExists(oldImagePath);
                 }
@@ -74,6 +79,7 @@ public class GuestService {
         }
 
         guestRepository.save(guest);
+        mailService.sendGuestInvitationEmail(guest, event);
         return guestMapper.toResponse(guest);
     }
 
@@ -95,8 +101,8 @@ public class GuestService {
     private static GuestEntity mapToEntity(AddGuestDto guestDto, EventEntity event) {
         GuestEntity guest = new GuestEntity();
         guest.setEvent(event);
-        guest.setName(guestDto.getName());
-        guest.setFirstname(guestDto.getFirstname());
+        guest.setName(guestDto.getName().toUpperCase());
+        guest.setFirstname(StringUtils.capitalizeWords(guestDto.getFirstname()));
         guest.setEmail(guestDto.getEmail());
         guest.setPhone(guestDto.getPhone());
         guest.setNumber_places(guestDto.getNumber_places());
@@ -107,10 +113,10 @@ public class GuestService {
 
     private static void updateFields(UpdateGuestDto guestDto, GuestEntity guest) {
         if (guestDto.getName() != null && !guestDto.getName().isBlank()) {
-            guest.setName(guestDto.getName());
+            guest.setName(guestDto.getName().toUpperCase());
         }
         if (guestDto.getFirstname() != null && !guestDto.getFirstname().isBlank()) {
-            guest.setFirstname(guestDto.getFirstname());
+            guest.setFirstname(StringUtils.capitalizeWords(guestDto.getFirstname()));
         }
         if (guestDto.getEmail() != null && !guestDto.getEmail().isBlank()) {
             guest.setEmail(guestDto.getEmail());
