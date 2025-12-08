@@ -62,4 +62,11 @@ public class GuestController {
         guestService.removeGuest(id);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{id}/send-reminder")
+    public ResponseEntity<?> sendReminder(@PathVariable Long id) {
+        guestService.sendReminderEmail(id);
+        return ResponseEntity.ok(Map.of("message", "Rappel envoyé"));
+    }
+
 }

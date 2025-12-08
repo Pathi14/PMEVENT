@@ -79,7 +79,9 @@ public class GuestService {
         }
 
         guestRepository.save(guest);
-        mailService.sendGuestInvitationEmail(guest, event);
+        if (guestDto.getSendMail() != null && guestDto.getSendMail()) {
+            mailService.sendGuestInvitationEmail(guest, event);
+        }
         return guestMapper.toResponse(guest);
     }
 
@@ -97,6 +99,14 @@ public class GuestService {
         guestRepository.deleteById(id);
     }
 
+    public void sendReminderEmail(Long guestId) {
+        GuestEntity guest = guestRepository.findById(guestId)
+                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
+
+        EventEntity event = guest.getEvent();
+
+        mailService.sendGuestReminderEmail(guest, event);
+    }
 
     private static GuestEntity mapToEntity(AddGuestDto guestDto, EventEntity event) {
         GuestEntity guest = new GuestEntity();

@@ -22,4 +22,5 @@ public class AddGuestDto {
 
     private String comment;
     private MultipartFile photo;
+    private Boolean sendMail = false;
 }
