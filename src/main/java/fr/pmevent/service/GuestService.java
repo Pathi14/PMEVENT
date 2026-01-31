@@ -18,6 +18,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -41,12 +42,19 @@ public class GuestService {
         return guestMapper.toResponse(guest);
     }
 
+    public GuestEntity getGuestEntity(Long id) {
+        return guestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("This guest doesn't exist"));
+    }
+
     public GuestResponse addGuest(Long eventId, AddGuestDto guestDto) {
 
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
 
         GuestEntity guest = mapToEntity(guestDto, event);
+
+        guest.setQrCodeToken(UUID.randomUUID().toString());
 
         // Vérifier si une photo est envoyée
         if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
@@ -106,6 +114,31 @@ public class GuestService {
         EventEntity event = guest.getEvent();
 
         mailService.sendGuestReminderEmail(guest, event);
+    }
+
+    public Map<String, Object> verifyQrCode(String code) {
+        String[] parts = code.split(":");
+        Long guestId = Long.valueOf(parts[1]);
+        String token = parts[2];
+
+        GuestEntity guest = guestRepository.findById(guestId)
+                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
+
+        if (!guest.getQrCodeToken().equals(token))
+            throw new RuntimeException("QR Code invalide");
+
+        return Map.of(
+                "valid", true,
+                "guest", guestMapper.toResponse(guest)
+        );
+    }
+
+    public void markPresent(Long id) {
+        GuestEntity guest = guestRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
+
+        guest.setPresent(true);
+        guestRepository.save(guest);
     }
 
     private static GuestEntity mapToEntity(AddGuestDto guestDto, EventEntity event) {

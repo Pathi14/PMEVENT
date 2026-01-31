@@ -4,16 +4,20 @@ import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.SendGrid;
 import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Attachments;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Base64;
 
+@Async
 @Service
 @RequiredArgsConstructor
 public class MailService {
@@ -22,6 +26,8 @@ public class MailService {
 
     @Value("${sendgrid.sender}")
     private String sender;
+
+    private final QrCodeService qrCodeService;
 
     public void sendGuestInvitationEmail(GuestEntity guest, EventEntity event) {
 
@@ -108,6 +114,9 @@ public class MailService {
         // Image de l'évènement, si disponible
         String eventImageUrl = event.getImageUrl() != null ? "https://www.pmevent.com/uploads/events/" + event.getImageUrl() : "https://www.pmevent.com/uploads/events/default-event.png";
 
+        byte[] qrBytes = qrCodeService.generateQRCode("GUEST:" + guest.getId() + ":" + guest.getQrCodeToken());
+        String base64Qr = Base64.getEncoder().encodeToString(qrBytes);
+
         String htmlContent = """
                 <html>
                   <body style="font-family: 'Arial', sans-serif; background-color: #fff4f0; color: #5C4033; padding: 20px;">
@@ -130,8 +139,12 @@ public class MailService {
                             </ul>
                           </td>
                           <!-- Colonne image -->
-                          <td style="vertical-align:top; text-align:right;">
-                            <img src="%s" alt="Image de l'évènement" style="width:180px; border-radius:8px;">
+                          <td style="vertical-align:top; text-align:center;">
+                            <img src="cid:qrcode" alt="QR Code en pièce jointe" width="180" style="display:block; margin:auto; border-radius:8px;" />
+                
+                            <p style="font-size:12px; color:#777; margin-top:10px;">
+                              Ne partagez pas ce QR Code<br>Il est unique et sécurisé.
+                            </p>
                           </td>
                         </tr>
                       </table>
@@ -150,12 +163,19 @@ public class MailService {
                 event.getName(),
                 event.getStart_date(),
                 event.getLocation(),
-                guest.getNumber_places(),
-                eventImageUrl
+                guest.getNumber_places()
         );
 
         Content body = new Content("text/html", htmlContent);
         Mail mail = new Mail(from, subject, to, body);
+
+        Attachments attachments = new Attachments();
+        attachments.setContent(base64Qr);
+        attachments.setType("image/png");
+        attachments.setFilename("qrcode.png");
+        attachments.setDisposition("inline");
+        attachments.setContentId("<qrcode>");
+        mail.addAttachments(attachments);
 
         SendGrid sg = new SendGrid(apiKey);
         Request request = new Request();

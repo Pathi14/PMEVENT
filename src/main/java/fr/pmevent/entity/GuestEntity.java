@@ -33,6 +33,11 @@ public class GuestEntity {
     private String comment;
     private String photoUrl;
 
+    @Column(unique = true)
+    private String qrCodeToken;
+
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean present = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, foreignKey = @ForeignKey(

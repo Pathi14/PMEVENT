@@ -8,6 +8,7 @@ public record GuestResponse(
         String phone,
         Integer number_places,
         String comment,
-        String photoUrl
+        String photoUrl,
+        Boolean present
 ) {
 }

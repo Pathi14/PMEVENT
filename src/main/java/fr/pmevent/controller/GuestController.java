@@ -3,7 +3,9 @@ package fr.pmevent.controller;
 import fr.pmevent.dto.guest.AddGuestDto;
 import fr.pmevent.dto.guest.GuestResponse;
 import fr.pmevent.dto.guest.UpdateGuestDto;
+import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.service.GuestService;
+import fr.pmevent.service.QrCodeService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class GuestController {
     private final GuestService guestService;
+    private final QrCodeService qrCodeService;
 
     @GetMapping("/event/{eventId}")
     public ResponseEntity<List<GuestResponse>> getAllGuestOfOneEvent(@PathVariable Long eventId) {
@@ -67,6 +70,32 @@ public class GuestController {
     public ResponseEntity<?> sendReminder(@PathVariable Long id) {
         guestService.sendReminderEmail(id);
         return ResponseEntity.ok(Map.of("message", "Rappel envoyé"));
+    }
+
+    @GetMapping("/{id}/qrcode")
+    public ResponseEntity<byte[]> getGuestQrCode(@PathVariable Long id) {
+
+        GuestEntity guest = guestService.getGuestEntity(id);
+        String text = "GUEST:" + guest.getId() + ":" + guest.getQrCodeToken();
+
+        byte[] qr = qrCodeService.generateQRCode(text);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(qr);
+    }
+
+    @PostMapping("/verify-qr")
+    public ResponseEntity<?> verifyQr(@RequestBody Map<String, String> payload) {
+        String code = payload.get("code");
+
+        return ResponseEntity.ok(guestService.verifyQrCode(code));
+    }
+
+    @PostMapping("/{id}/present")
+    public ResponseEntity<?> markPresent(@PathVariable Long id) {
+        guestService.markPresent(id);
+        return ResponseEntity.ok().build();
     }
 
 }
