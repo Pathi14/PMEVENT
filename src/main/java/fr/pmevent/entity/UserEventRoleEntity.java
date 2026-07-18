@@ -1,6 +1,6 @@
 package fr.pmevent.entity;
 
-import fr.pmevent.enums.EventRole;
+import fr.pmevent.common.enums.EventRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

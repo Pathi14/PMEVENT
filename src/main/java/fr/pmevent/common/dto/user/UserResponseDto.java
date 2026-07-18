@@ -1,4 +1,4 @@
-package fr.pmevent.dto.user;
+package fr.pmevent.common.dto.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

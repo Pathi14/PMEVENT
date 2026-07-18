@@ -1,6 +1,6 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.AssignRoleDto;
+import fr.pmevent.common.dto.AssignRoleDto;
 import fr.pmevent.service.UserEventRoleService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;

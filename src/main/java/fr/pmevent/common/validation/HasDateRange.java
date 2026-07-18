@@ -1,4 +1,4 @@
-package fr.pmevent.validation;
+package fr.pmevent.common.validation;
 
 import java.time.LocalDate;
 

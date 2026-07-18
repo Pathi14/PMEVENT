@@ -1,12 +1,12 @@
 package fr.pmevent.service;
 
-import fr.pmevent.dto.event.CreateEventDto;
-import fr.pmevent.dto.event.EventResponseDto;
-import fr.pmevent.dto.event.UpdateEventDto;
+import fr.pmevent.common.dto.event.CreateEventDto;
+import fr.pmevent.common.dto.event.EventResponseDto;
+import fr.pmevent.common.dto.event.UpdateEventDto;
+import fr.pmevent.common.enums.EventRole;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.entity.UserEventRoleEntity;
-import fr.pmevent.enums.EventRole;
 import fr.pmevent.exception.AlreadyExistsException;
 import fr.pmevent.mapper.EventMapper;
 import fr.pmevent.repository.EventRepository;

@@ -1,8 +1,8 @@
 package fr.pmevent.repository;
 
+import fr.pmevent.common.enums.EventRole;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
-import fr.pmevent.enums.EventRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -1,4 +1,4 @@
-package fr.pmevent.dto.authentication;
+package fr.pmevent.common.dto.authentication;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

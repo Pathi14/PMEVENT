@@ -1,9 +1,9 @@
 package fr.pmevent.controller;
 
+import fr.pmevent.common.dto.authentication.AuthResponse;
+import fr.pmevent.common.dto.authentication.LoginDto;
+import fr.pmevent.common.dto.authentication.RegisterDto;
 import fr.pmevent.configuration.jwt.JwtUtil;
-import fr.pmevent.dto.authentication.AuthResponse;
-import fr.pmevent.dto.authentication.LoginDto;
-import fr.pmevent.dto.authentication.RegisterDto;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.service.UserService;
 import jakarta.validation.Valid;

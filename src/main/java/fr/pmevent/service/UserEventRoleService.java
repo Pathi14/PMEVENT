@@ -1,10 +1,10 @@
 package fr.pmevent.service;
 
-import fr.pmevent.dto.AssignRoleDto;
+import fr.pmevent.common.dto.AssignRoleDto;
+import fr.pmevent.common.enums.EventRole;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.entity.UserEventRoleEntity;
-import fr.pmevent.enums.EventRole;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;

@@ -1,8 +1,8 @@
 package fr.pmevent.mapper;
 
-import fr.pmevent.dto.event.CreateEventDto;
-import fr.pmevent.dto.event.EventResponseDto;
-import fr.pmevent.dto.event.UpdateEventDto;
+import fr.pmevent.common.dto.event.CreateEventDto;
+import fr.pmevent.common.dto.event.EventResponseDto;
+import fr.pmevent.common.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;

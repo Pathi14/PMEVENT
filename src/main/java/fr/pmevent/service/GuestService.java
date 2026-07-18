@@ -1,15 +1,15 @@
 package fr.pmevent.service;
 
-import fr.pmevent.dto.guest.AddGuestDto;
-import fr.pmevent.dto.guest.GuestResponse;
-import fr.pmevent.dto.guest.GuestRsvpResponse;
-import fr.pmevent.dto.guest.UpdateGuestDto;
+import fr.pmevent.common.dto.guest.AddGuestDto;
+import fr.pmevent.common.dto.guest.GuestResponse;
+import fr.pmevent.common.dto.guest.GuestRsvpResponse;
+import fr.pmevent.common.dto.guest.UpdateGuestDto;
+import fr.pmevent.common.utils.StringUtils;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
-import fr.pmevent.utils.StringUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 

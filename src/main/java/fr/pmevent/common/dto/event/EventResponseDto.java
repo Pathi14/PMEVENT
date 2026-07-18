@@ -1,4 +1,4 @@
-package fr.pmevent.dto.event;
+package fr.pmevent.common.dto.event;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

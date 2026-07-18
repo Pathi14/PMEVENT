@@ -1,7 +1,7 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.user.UpdateUser;
-import fr.pmevent.dto.user.UserResponseDto;
+import fr.pmevent.common.dto.user.UpdateUser;
+import fr.pmevent.common.dto.user.UserResponseDto;
 import fr.pmevent.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;

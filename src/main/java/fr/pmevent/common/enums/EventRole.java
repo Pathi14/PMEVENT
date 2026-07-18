@@ -1,4 +1,4 @@
-package fr.pmevent.enums;
+package fr.pmevent.common.enums;
 
 public enum EventRole {
     EDITOR,

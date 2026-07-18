@@ -1,6 +1,6 @@
 package fr.pmevent.mapper;
 
-import fr.pmevent.dto.guest.GuestResponse;
+import fr.pmevent.common.dto.guest.GuestResponse;
 import fr.pmevent.entity.GuestEntity;
 import org.mapstruct.Mapper;
 

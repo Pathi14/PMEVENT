@@ -1,6 +1,6 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.guest.GuestRsvpResponse;
+import fr.pmevent.common.dto.guest.GuestRsvpResponse;
 import fr.pmevent.service.GuestService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;

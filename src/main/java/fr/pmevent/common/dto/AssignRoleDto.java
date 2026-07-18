@@ -1,6 +1,6 @@
-package fr.pmevent.dto;
+package fr.pmevent.common.dto;
 
-import fr.pmevent.enums.EventRole;
+import fr.pmevent.common.enums.EventRole;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

@@ -1,8 +1,8 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.guest.AddGuestDto;
-import fr.pmevent.dto.guest.GuestResponse;
-import fr.pmevent.dto.guest.UpdateGuestDto;
+import fr.pmevent.common.dto.guest.AddGuestDto;
+import fr.pmevent.common.dto.guest.GuestResponse;
+import fr.pmevent.common.dto.guest.UpdateGuestDto;
 import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.service.GuestService;
 import fr.pmevent.service.QrCodeService;

@@ -1,8 +1,8 @@
 package fr.pmevent.service;
 
-import fr.pmevent.dto.authentication.RegisterDto;
-import fr.pmevent.dto.user.UpdateUser;
-import fr.pmevent.dto.user.UserResponseDto;
+import fr.pmevent.common.dto.authentication.RegisterDto;
+import fr.pmevent.common.dto.user.UpdateUser;
+import fr.pmevent.common.dto.user.UserResponseDto;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.mapper.UserMapper;
 import fr.pmevent.repository.UserEventRoleRepository;

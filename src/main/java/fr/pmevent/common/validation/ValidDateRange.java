@@ -1,4 +1,4 @@
-package fr.pmevent.validation;
+package fr.pmevent.common.validation;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;

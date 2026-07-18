@@ -1,8 +1,8 @@
 package fr.pmevent.controller;
 
-import fr.pmevent.dto.event.CreateEventDto;
-import fr.pmevent.dto.event.EventResponseDto;
-import fr.pmevent.dto.event.UpdateEventDto;
+import fr.pmevent.common.dto.event.CreateEventDto;
+import fr.pmevent.common.dto.event.EventResponseDto;
+import fr.pmevent.common.dto.event.UpdateEventDto;
 import fr.pmevent.service.EventService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
