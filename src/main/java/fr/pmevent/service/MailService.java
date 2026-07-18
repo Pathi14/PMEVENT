@@ -11,6 +11,7 @@ import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +20,7 @@ import java.util.Base64;
 
 @Async
 @Service
+@Profile("!test")
 @RequiredArgsConstructor
 public class MailService {
     @Value("${sendgrid.api-key}")

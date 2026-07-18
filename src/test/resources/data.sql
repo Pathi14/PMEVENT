@@ -1,0 +1,66 @@
+INSERT INTO users (
+    id,
+    name,
+    firstname,
+    email,
+    password
+)
+VALUES
+(
+    1,
+    'Admin',
+    'Test',
+    'test@test.com',
+    '$2a$10$7EqJtq98hPqEX7fNZaFWoO5C8K0WqJ8J5L7YxP8uNQ2V4h2jS9V8e'
+);
+
+
+INSERT INTO users (
+    id,
+    name,
+    firstname,
+    email,
+    password
+)
+VALUES
+(
+    25,
+    'Viewer',
+    'Test',
+    'viewer@test.com',
+    '$2a$10$7EqJtq98hPqEX7fNZaFWoO5C8K0WqJ8J5L7YxP8uNQ2V4h2jS9V8e'
+);
+
+
+INSERT INTO events (
+    id,
+    name,
+    location,
+    start_date,
+    end_date,
+    description,
+    public_event
+)
+VALUES
+(
+    45,
+    'Event Test',
+    'Paris',
+    '2026-01-01',
+    '2026-01-01',
+    'Description',
+    true
+);
+
+
+INSERT INTO user_event_roles (
+    user_id,
+    event_id,
+    role
+)
+VALUES
+(
+    1,
+    45,
+    'CREATOR'
+);
