@@ -98,7 +98,6 @@ public class UserService {
         return passwordEncoder.matches(currentPassword, user.getPassword());
     }
 
-
     @Transactional
     public void delete(Long userId) {
         String connectedUSer = SecurityContextHolder.getContext().getAuthentication().getName();

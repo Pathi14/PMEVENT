@@ -21,7 +21,7 @@ public class GuestEntity {
 
     @Column(nullable = false)
     private String name;
-
+    
     private String firstname;
 
     @Email(message = "Invalid email format")

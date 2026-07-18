@@ -2,13 +2,14 @@ package fr.pmevent.service;
 
 import fr.pmevent.dto.guest.AddGuestDto;
 import fr.pmevent.dto.guest.GuestResponse;
+import fr.pmevent.dto.guest.GuestRsvpResponse;
 import fr.pmevent.dto.guest.UpdateGuestDto;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
 import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
-import fr.pmevent.util.StringUtils;
+import fr.pmevent.utils.StringUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -141,6 +142,34 @@ public class GuestService {
         guestRepository.save(guest);
     }
 
+    public GuestRsvpResponse getRsvpInfo(String token) {
+        GuestEntity guest = guestRepository.findByQrCodeToken(token)
+                .orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
+
+        EventEntity event = guest.getEvent();
+
+        return new GuestRsvpResponse(
+                guest.getId(),
+                guest.getName(),
+                guest.getFirstname(),
+                guest.getNumber_places(),
+                guest.getPresent(),
+                event.getName(),
+                event.getDescription(),
+                event.getStart_date(),
+                event.getLocation(),
+                event.getImageUrl()
+        );
+    }
+
+    public void updateRsvpResponse(String token, Boolean willAttend) {
+        GuestEntity guest = guestRepository.findByQrCodeToken(token)
+                .orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
+
+        guest.setPresent(willAttend);
+        guestRepository.save(guest);
+    }
+
     private static GuestEntity mapToEntity(AddGuestDto guestDto, EventEntity event) {
         GuestEntity guest = new GuestEntity();
         guest.setEvent(event);
@@ -195,4 +224,6 @@ public class GuestService {
             }
         }
     }
+
+
 }

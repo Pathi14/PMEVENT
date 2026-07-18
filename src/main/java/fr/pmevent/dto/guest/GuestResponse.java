@@ -9,6 +9,7 @@ public record GuestResponse(
         Integer number_places,
         String comment,
         String photoUrl,
-        Boolean present
+        Boolean present,
+        String qrCodeToken
 ) {
 }

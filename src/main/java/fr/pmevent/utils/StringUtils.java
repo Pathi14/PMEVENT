@@ -1,4 +1,4 @@
-package fr.pmevent.util;
+package fr.pmevent.utils;
 
 public class StringUtils {
     private StringUtils() {
