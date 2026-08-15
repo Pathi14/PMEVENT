@@ -7,10 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface GuestRepository extends JpaRepository<GuestEntity, Long> {
-    List<GuestEntity> findByEventId(Long eventId);
+public interface GuestRepository extends JpaRepository<GuestEntity, UUID> {
+    List<GuestEntity> findByEventId(UUID eventId);
 
     void deleteAllByEvent(EventEntity event);
 

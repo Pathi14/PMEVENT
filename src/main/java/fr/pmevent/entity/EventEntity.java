@@ -2,15 +2,18 @@ package fr.pmevent.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "events")
 @NoArgsConstructor
@@ -18,8 +21,8 @@ import java.util.List;
 public class EventEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
     @Column(unique = true, nullable = false)
     private String name;
@@ -29,6 +32,7 @@ public class EventEntity {
     private LocalDate end_date;
     private String description;
     private String imageUrl;
+    private String imagePublicId;
 
     @Column(nullable = false)
     private boolean publicEvent = false;

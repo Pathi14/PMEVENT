@@ -12,12 +12,8 @@ import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,127 +21,207 @@ import java.util.UUID;
 @Service
 @AllArgsConstructor
 public class GuestService {
-    private GuestRepository guestRepository;
-    private EventRepository eventRepository;
-    private GuestMapper guestMapper;
-    private final MailService mailService;
 
-    public List<GuestResponse> getAllGuestOfOneEvent(Long eventId) {
+    private final GuestRepository guestRepository;
+    private final EventRepository eventRepository;
+    private final GuestMapper guestMapper;
+    private final MailService mailService;
+    private final CloudinaryService cloudinaryService;
+
+    /**
+     * Récupérer tous les invités d'un événement
+     */
+    public List<GuestResponse> getAllGuestOfOneEvent(UUID eventId) {
         List<GuestEntity> guests = guestRepository.findByEventId(eventId);
-        return guests.stream()
-                .map(guestMapper::toResponse)
-                .toList();
+        return guests.stream().map(guestMapper::toResponse).toList();
     }
 
-    public GuestResponse getGuestById(Long id) {
-        GuestEntity guest = guestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("This guest doesn't exit."));
+    /**
+     * Récupérer un invité par son ID
+     */
+    public GuestResponse getGuestById(UUID id) {
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest doesn't exist."));
         return guestMapper.toResponse(guest);
     }
 
-    public GuestEntity getGuestEntity(Long id) {
-        return guestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("This guest doesn't exist"));
+    /**
+     * Récupérer l'entité Guest
+     */
+    public GuestEntity getGuestEntity(UUID id) {
+        return guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest doesn't exist"));
     }
 
-    public GuestResponse addGuest(Long eventId, AddGuestDto guestDto) {
+    /**
+     * Ajouter un invité
+     */
+    public GuestResponse addGuest(UUID eventId, AddGuestDto guestDto) {
 
-        EventEntity event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
-
+        EventEntity event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
         GuestEntity guest = mapToEntity(guestDto, event);
 
         guest.setQrCodeToken(UUID.randomUUID().toString());
 
-        // Vérifier si une photo est envoyée
-        if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+        /* Permet de supprimer l'image Cloudinary si la sauvegarde BDD échoue. */
+        String uploadedPublicId = null;
 
-            String contentType = guestDto.getPhoto().getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                throw new RuntimeException("Le fichier doit être une image (PNG, JPG, JPEG).");
+        try {
+            if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+                validateImage(guestDto.getPhoto());
+                Map<?, ?> result = cloudinaryService.uploadImage(guestDto.getPhoto(), "pmevent/guests");
+                String secureUrl = (String) result.get("secure_url");
+                String publicId = (String) result.get("public_id");
+
+                guest.setPhotoUrl(secureUrl);
+                guest.setPhotoPublicId(publicId);
+
+                uploadedPublicId = publicId;
             }
 
-            try {
-                if (guest.getPhotoUrl() != null) {
-                    Path oldImagePath = Paths.get("uploads/guests")
-                            .resolve(Paths.get(guest.getPhotoUrl()).getFileName().toString());
-                    Files.deleteIfExists(oldImagePath);
+            GuestEntity savedGuest = guestRepository.save(guest);
+
+            /* Envoi du mail uniquement après la sauvegarde réussie. */
+            if (Boolean.TRUE.equals(guestDto.getSendMail())) {
+                mailService.sendGuestInvitationEmail(savedGuest, event);
+            }
+
+            return guestMapper.toResponse(savedGuest);
+
+        } catch (Exception e) {
+
+            /* Si Cloudinary a réussi mais que la BDD échoue, on supprime l'image. */
+            if (uploadedPublicId != null) {
+
+                try {
+                    cloudinaryService.deleteImage(uploadedPublicId);
+                } catch (Exception ignored) {
+                    // On ne masque pas l'erreur originale
                 }
-
-                String fileName = UUID.randomUUID() + "_" + guestDto.getPhoto().getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/guests");
-
-                Files.createDirectories(uploadPath);
-
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(guestDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                guest.setPhotoUrl("/uploads/guests/" + fileName);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Erreur lors du chargement de la photo", e);
             }
+
+            throw e;
+        }
+    }
+
+    /**
+     * Modifier un invité
+     */
+    public GuestResponse updateGuest(UUID id, UpdateGuestDto guestDto) {
+
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest does not exist"));
+
+        /* Sauvegarder l'ancien public_id avant toute modification. */
+        String oldPublicId = guest.getPhotoPublicId();
+        String newPublicId = null;
+
+        try {
+
+            updateFields(guestDto, guest);
+
+            /* Nouvelle photo */
+            if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
+                validateImage(guestDto.getPhoto());
+                Map<?, ?> result = cloudinaryService.uploadImage(guestDto.getPhoto(), "pmevent/guests");
+                String secureUrl = (String) result.get("secure_url");
+                newPublicId = (String) result.get("public_id");
+
+                guest.setPhotoUrl(secureUrl);
+
+                guest.setPhotoPublicId(newPublicId);
+            }
+
+            /* Sauvegarder la nouvelle version */
+            GuestEntity updatedGuest = guestRepository.save(guest);
+
+            /* Une fois la BDD sauvegardée, supprimer l'ancienne image. */
+            if (newPublicId != null && oldPublicId != null && !oldPublicId.equals(newPublicId)) {
+                cloudinaryService.deleteImage(oldPublicId);
+            }
+
+            return guestMapper.toResponse(updatedGuest);
+
+        } catch (Exception e) {
+
+            /*
+             * Si la nouvelle image a été uploadée
+             * mais que la sauvegarde échoue,
+             * supprimer la nouvelle image.
+             */
+            if (newPublicId != null) {
+                try {
+                    cloudinaryService.deleteImage(newPublicId);
+                } catch (Exception ignored) {
+                    // On conserve l'erreur originale
+                }
+            }
+
+            throw e;
+        }
+    }
+
+    /**
+     * Supprimer un invité
+     */
+    public void removeGuest(UUID id) {
+
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
+
+        /* Supprimer d'abord l'image Cloudinary */
+        if (guest.getPhotoPublicId() != null && !guest.getPhotoPublicId().isBlank()) {
+            cloudinaryService.deleteImage(guest.getPhotoPublicId());
         }
 
-        guestRepository.save(guest);
-        if (guestDto.getSendMail() != null && guestDto.getSendMail()) {
-            mailService.sendGuestInvitationEmail(guest, event);
-        }
-        return guestMapper.toResponse(guest);
+        /* Puis supprimer l'invité */
+        guestRepository.delete(guest);
     }
 
-    public GuestResponse updateGuest(Long id, UpdateGuestDto guestDto) {
-        GuestEntity guest = guestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("this guest does not exist"));
+    /**
+     * Envoyer un rappel par email
+     */
+    public void sendReminderEmail(UUID guestId) {
 
-        updateFields(guestDto, guest);
-        GuestEntity guestUpdated = guestRepository.save(guest);
-
-        return guestMapper.toResponse(guestUpdated);
-    }
-
-    public void removeGuest(Long id) {
-        guestRepository.deleteById(id);
-    }
-
-    public void sendReminderEmail(Long guestId) {
-        GuestEntity guest = guestRepository.findById(guestId)
-                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
-
+        GuestEntity guest = guestRepository.findById(guestId).orElseThrow(() -> new RuntimeException("Invité introuvable"));
         EventEntity event = guest.getEvent();
-
         mailService.sendGuestReminderEmail(guest, event);
     }
 
+    /**
+     * Vérification du QR Code
+     */
     public Map<String, Object> verifyQrCode(String code) {
+
         String[] parts = code.split(":");
-        Long guestId = Long.valueOf(parts[1]);
+        if (parts.length != 3) {
+            throw new RuntimeException("QR Code invalide");
+        }
+
+        UUID guestId = UUID.fromString(parts[1]);
         String token = parts[2];
 
         GuestEntity guest = guestRepository.findById(guestId)
                 .orElseThrow(() -> new RuntimeException("Invité introuvable"));
 
-        if (!guest.getQrCodeToken().equals(token))
+        if (!guest.getQrCodeToken().equals(token)) {
             throw new RuntimeException("QR Code invalide");
+        }
 
-        return Map.of(
-                "valid", true,
-                "guest", guestMapper.toResponse(guest)
-        );
+        return Map.of("valid", true, "guest", guestMapper.toResponse(guest));
     }
 
-    public void markPresent(Long id) {
-        GuestEntity guest = guestRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
-
+    /**
+     * Marquer un invité présent
+     */
+    public void markPresent(UUID id) {
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
         guest.setPresent(true);
         guestRepository.save(guest);
     }
 
+    /**
+     * Informations RSVP
+     */
     public GuestRsvpResponse getRsvpInfo(String token) {
-        GuestEntity guest = guestRepository.findByQrCodeToken(token)
-                .orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
 
+        GuestEntity guest = guestRepository.findByQrCodeToken(token).orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
         EventEntity event = guest.getEvent();
 
         return new GuestRsvpResponse(
@@ -162,15 +238,22 @@ public class GuestService {
         );
     }
 
-    public void updateRsvpResponse(String token, Boolean willAttend) {
-        GuestEntity guest = guestRepository.findByQrCodeToken(token)
-                .orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
 
+    /**
+     * Réponse RSVP
+     */
+    public void updateRsvpResponse(String token, Boolean willAttend) {
+        GuestEntity guest = guestRepository.findByQrCodeToken(token).orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
         guest.setPresent(willAttend);
         guestRepository.save(guest);
     }
 
+
+    /**
+     * Conversion DTO -> Entity
+     */
     private static GuestEntity mapToEntity(AddGuestDto guestDto, EventEntity event) {
+
         GuestEntity guest = new GuestEntity();
         guest.setEvent(event);
         guest.setName(guestDto.getName().toUpperCase());
@@ -183,6 +266,9 @@ public class GuestService {
     }
 
 
+    /**
+     * Mise à jour des champs classiques
+     */
     private static void updateFields(UpdateGuestDto guestDto, GuestEntity guest) {
         if (guestDto.getName() != null && !guestDto.getName().isBlank()) {
             guest.setName(guestDto.getName().toUpperCase());
@@ -202,28 +288,18 @@ public class GuestService {
         if (guestDto.getComment() != null && !guestDto.getComment().isBlank()) {
             guest.setComment(guestDto.getComment());
         }
-        if (guestDto.getPhoto() != null && !guestDto.getPhoto().isEmpty()) {
-            try {
-                if (guest.getPhotoUrl() != null) {
-                    Path oldImagePath = Paths.get("uploads/guests")
-                            .resolve(Paths.get(guest.getPhotoUrl()).getFileName().toString());
-                    Files.deleteIfExists(oldImagePath);
-                }
-
-                String fileName = UUID.randomUUID() + "_" + guestDto.getPhoto().getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/guests");
-
-                Files.createDirectories(uploadPath);
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(guestDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                guest.setPhotoUrl("/uploads/guests/" + fileName);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Erreur lors du chargement de la photo", e);
-            }
-        }
     }
 
 
+    /**
+     * Vérification du fichier image
+     */
+    private static void validateImage(MultipartFile file) {
+
+        String contentType = file.getContentType();
+
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Le fichier doit être une image.");
+        }
+    }
 }

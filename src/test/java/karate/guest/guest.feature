@@ -4,16 +4,15 @@ Feature: Gestion des invités
     * url baseUrl
 
   Scenario: Récupérer les invités d'un évènement
-    Given path '/guests/event/1'
+    Given path '/guests/event/c3aa95af-71d6-4735-b5f0-c020f17549e1'
     When method GET
     Then status 200
     And match response == '#[]'
 
-
   Scenario: CRUD d'un invité
 
-    # Ajouter un invité à l'évènement 45
-    Given path '/guests/event/45/new-guest'
+    # Ajouter un invité à l'évènement c3aa95af-71d6-4735-b5f0-c020f17549e3
+    Given path '/guests/event/c3aa95af-71d6-4735-b5f0-c020f17549e3/new-guest'
     And multipart field name = 'Dupont'
     And multipart field firstname = 'Jean'
     And multipart field email = 'jean.dupont@test.com'

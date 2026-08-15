@@ -5,12 +5,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class GuestRsvpResponse {
-    private Long guestId;
+    private UUID guestId;
     private String guestName;
     private String guestFirstname;
     private Integer numberPlaces;

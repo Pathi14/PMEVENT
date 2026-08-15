@@ -1,7 +1,9 @@
 package fr.pmevent.common.dto.guest;
 
+import java.util.UUID;
+
 public record GuestResponse(
-        Long id,
+        UUID id,
         String name,
         String firstname,
         String email,

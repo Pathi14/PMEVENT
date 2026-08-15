@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -80,7 +81,7 @@ public class UserEventRoleService {
      * Supprime un rôle attribué à un utilisateur sur un évènement.
      * Seuls le CREATOR et les EDITORs peut le faire.
      */
-    public void removeRoleFromUser(String userEmail, Long eventId, Long userId) {
+    public void removeRoleFromUser(String userEmail, UUID eventId, UUID userId) {
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
@@ -108,7 +109,7 @@ public class UserEventRoleService {
     /**
      * Retourne la liste des rôles d’un évènement (visible uniquement pour CREATOR et EDITOR)
      */
-    public List<Map<String, Object>> getRolesByEvent(Long eventId) {
+    public List<Map<String, Object>> getRolesByEvent(UUID eventId) {
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
 
@@ -126,7 +127,7 @@ public class UserEventRoleService {
     /**
      * Retourne le rôle du user connecté pour un évènement.
      */
-    public Map<String, String> getMyRoleForEvent(String userEmail, Long eventId) {
+    public Map<String, String> getMyRoleForEvent(String userEmail, UUID eventId) {
         UserEntity user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         EventEntity event = eventRepository.findById(eventId)

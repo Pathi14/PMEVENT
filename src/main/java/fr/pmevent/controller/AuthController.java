@@ -33,9 +33,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterDto userDto) {
-        userDto.setPassword(passwordEncoder.encode(userDto.getPassword()));
         UserEntity user = userService.createUser(userDto);
-
         String token = jwtUtil.generateToken(new org.springframework.security.core.userdetails.User(
                 user.getEmail(), user.getPassword(), List.of()
         ));

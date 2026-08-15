@@ -8,14 +8,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("users-roles")
 public class UserEventRoleController {
     private UserEventRoleService userEventRoleService;
-
-    // Tester ce service
 
     @PostMapping("/assign-role")
     ResponseEntity<?> AssignRoleToUser(@RequestBody @Valid AssignRoleDto assignRole) {
@@ -34,8 +34,8 @@ public class UserEventRoleController {
     }
 
     @DeleteMapping("/remove-role")
-    public ResponseEntity<?> removeRoleFromUser(@RequestParam Long eventId,
-                                                @RequestParam Long userId) {
+    public ResponseEntity<?> removeRoleFromUser(@RequestParam UUID eventId,
+                                                @RequestParam UUID userId) {
         try {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
@@ -48,7 +48,7 @@ public class UserEventRoleController {
     }
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<?> getRolesByEvent(@PathVariable Long eventId) {
+    public ResponseEntity<?> getRolesByEvent(@PathVariable UUID eventId) {
         try {
             return ResponseEntity.ok(userEventRoleService.getRolesByEvent(eventId));
         } catch (RuntimeException e) {
@@ -57,7 +57,7 @@ public class UserEventRoleController {
     }
 
     @GetMapping("/my-role/{eventId}")
-    public ResponseEntity<?> getMyRoleForEvent(@PathVariable Long eventId) {
+    public ResponseEntity<?> getMyRoleForEvent(@PathVariable UUID eventId) {
         try {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
             return ResponseEntity.ok(userEventRoleService.getMyRoleForEvent(currentUserEmail, eventId));

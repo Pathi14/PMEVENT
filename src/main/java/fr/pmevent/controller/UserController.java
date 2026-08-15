@@ -3,6 +3,7 @@ package fr.pmevent.controller;
 import fr.pmevent.common.dto.user.UpdateUser;
 import fr.pmevent.common.dto.user.UserResponseDto;
 import fr.pmevent.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @AllArgsConstructor
 @RestController
@@ -27,20 +29,24 @@ public class UserController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> updateUser(
-            @PathVariable Long userId,
-            @ModelAttribute UpdateUser userDto
+            @PathVariable UUID userId,
+            @ModelAttribute @Valid UpdateUser userDto
     ) {
         try {
             UserResponseDto user = userService.updateUser(userId, userDto);
             return ResponseEntity.ok(user);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.toString(),
+                    "cause", e.getCause() == null ? "" : e.getCause().toString()
+            ));
         }
     }
 
     @PostMapping("/{id}/verify-password")
     public ResponseEntity<?> verifyPassword(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @RequestBody Map<String, String> request
     ) {
         String currentPassword = request.get("currentPassword");
@@ -61,7 +67,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable UUID userId) {
         userService.delete(userId);
         return ResponseEntity.noContent().build();
     }

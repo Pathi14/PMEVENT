@@ -1,9 +1,9 @@
-package fr.pmevent.configuration;
+package fr.pmevent.config;
 
-import fr.pmevent.config.TestAuthenticationFilter;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -11,13 +11,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @TestConfiguration
 public class TestSecurityConfig {
 
-
     @Bean
     SecurityFilterChain testSecurity(HttpSecurity http)
             throws Exception {
 
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth.anyRequest().authenticated()
                 )

@@ -10,7 +10,7 @@ public class UpdateUser {
     private String firstname;
     private MultipartFile photo;
 
-    @Email
+    @Email(message = "L'email n'est pas valide")
     private String email;
     private String password;
 }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @AllArgsConstructor
@@ -20,7 +21,7 @@ public class EventController {
     private EventService eventService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<EventResponseDto> findEvent(@PathVariable long id) {
+    public ResponseEntity<EventResponseDto> findEvent(@PathVariable UUID id) {
         EventResponseDto event = eventService.findEventById(id);
         return ResponseEntity.ok(event);
     }
@@ -61,7 +62,7 @@ public class EventController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> updateEvent(
-            @PathVariable long id,
+            @PathVariable UUID id,
             @ModelAttribute UpdateEventDto eventDto
     ) {
         try {
@@ -73,7 +74,7 @@ public class EventController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable long id) {
+    public ResponseEntity<Void> deleteEvent(@PathVariable UUID id) {
         eventService.deleteEvent(id);
         return ResponseEntity.noContent().build();
     }

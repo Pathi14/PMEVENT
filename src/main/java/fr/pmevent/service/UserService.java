@@ -14,15 +14,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
-
 
 @Service
 @AllArgsConstructor
@@ -32,51 +28,75 @@ public class UserService {
     private final UserEventRoleRepository userEventRoleRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CloudinaryService cloudinaryService;
 
+    /**
+     * Récupérer tous les utilisateurs
+     */
     public List<UserResponseDto> getAllUser() {
+
         List<UserEntity> users = userRepository.findAll();
 
-        return users.stream().map(user -> {
-            UserResponseDto dto = new UserResponseDto();
-            dto.setId(user.getId());
-            dto.setName(user.getName());
-            dto.setFirstname(user.getFirstname());
-            dto.setEmail(user.getEmail());
-            dto.setCreate_date(user.getCreate_date());
-            dto.setUpdate_date(user.getUpdate_date());
-            return dto;
-        }).toList();
+        return users.stream()
+                .map(user -> {
+                    UserResponseDto dto = new UserResponseDto();
+
+                    dto.setId(user.getId());
+                    dto.setName(user.getName());
+                    dto.setFirstname(user.getFirstname());
+                    dto.setEmail(user.getEmail());
+                    dto.setCreate_date(user.getCreate_date());
+                    dto.setUpdate_date(user.getUpdate_date());
+
+                    return dto;
+                })
+                .toList();
     }
 
-    public UserResponseDto getCurrentUserInfo() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+    /**
+     * Récupérer les informations de l'utilisateur connecté
+     */
+    public UserResponseDto getCurrentUserInfo() {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new RuntimeException("Utilisateur non authentifié");
         }
-
         String email = authentication.getName();
-
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        UserEntity user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
 
         return userMapper.toResponse(user);
     }
 
+    /**
+     * Création d'un utilisateur
+     */
     public UserEntity createUser(RegisterDto userDto) {
+
         if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
             throw new RuntimeException("This email already exists");
         }
+
         UserEntity user = new UserEntity();
         user.setName(userDto.getName());
         user.setFirstname(userDto.getFirstname());
         user.setEmail(userDto.getEmail());
-        user.setPassword(userDto.getPassword());
+        user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 
         return userRepository.save(user);
     }
 
-    public UserResponseDto updateUser(Long userId, UpdateUser userDto) {
+
+    /**
+     * Modifier un utilisateur
+     */
+    public UserResponseDto updateUser(UUID userId, UpdateUser userDto) {
+
+        if (userDto == null) {
+            throw new IllegalArgumentException("Le corps de la requête est vide.");
+        }
+
         String connectedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
         UserEntity user = userRepository.findById(userId)
@@ -86,34 +106,91 @@ public class UserService {
             throw new AccessDeniedException("You are not allowed to update this user.");
         }
 
-        updateFields(userDto, user);
+        String oldPublicId = user.getPhotoPublicId();
+        String newPublicId = null;
 
-        return userMapper.toResponse(userRepository.save(user));
+        try {
+            updateFields(userDto, user);
+
+            if (userDto.getPhoto() != null && !userDto.getPhoto().isEmpty()) {
+                validateImage(userDto.getPhoto());
+
+                Map<?, ?> result =
+                        cloudinaryService.uploadImage(userDto.getPhoto(), "pmevent/users");
+
+                String secureUrl = (String) result.get("secure_url");
+                newPublicId = (String) result.get("public_id");
+
+                user.setPhotoUrl(secureUrl);
+                user.setPhotoPublicId(newPublicId);
+            }
+
+            UserEntity updatedUser = userRepository.save(user);
+
+            if (newPublicId != null && oldPublicId != null && !oldPublicId.equals(newPublicId)) {
+                cloudinaryService.deleteImage(oldPublicId);
+            }
+
+            return userMapper.toResponse(updatedUser);
+
+        } catch (Exception e) {
+            if (newPublicId != null) {
+                try {
+                    cloudinaryService.deleteImage(newPublicId);
+                } catch (Exception ignored) {
+                }
+            }
+            throw e;
+        }
     }
 
-    public boolean verifyPassword(Long id, String currentPassword) {
-        UserEntity user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+    /**
+     * Vérifier le mot de passe actuel
+     */
+    public boolean verifyPassword(UUID id, String currentPassword) {
 
-        return passwordEncoder.matches(currentPassword, user.getPassword());
+        UserEntity user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Utilisateur introuvable"));
+
+        return passwordEncoder.matches(
+                currentPassword,
+                user.getPassword()
+        );
     }
 
+
+    /**
+     * Supprimer un utilisateur
+     */
     @Transactional
-    public void delete(Long userId) {
-        String connectedUSer = SecurityContextHolder.getContext().getAuthentication().getName();
+    public void delete(UUID userId) {
 
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("This user does not exist"));
+        String connectedUser = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        if (!user.getEmail().equals(connectedUSer)) {
-            throw new AccessDeniedException("You are not allowed to update this user.");
+        UserEntity user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("This user does not exist"));
+
+        /* Vérifier que l'utilisateur supprime bien son propre compte. */
+        if (!user.getEmail().equals(connectedUser)) {
+            throw new AccessDeniedException("You are not allowed to delete this user.");
         }
 
+        /* Supprimer les relations avec les événements. */
         userEventRoleRepository.deleteByUserId(userId);
-        userRepository.deleteById(userId);
+
+        /* Supprimer la photo Cloudinary. */
+        if (user.getPhotoPublicId() != null && !user.getPhotoPublicId().isBlank()) {
+            cloudinaryService.deleteImage(user.getPhotoPublicId());
+        }
+
+        /* Supprimer l'utilisateur. */
+        userRepository.delete(user);
     }
 
+
+    /**
+     * Mise à jour des champs utilisateur
+     */
     private void updateFields(UpdateUser userDto, UserEntity user) {
+
         if (userDto.getName() != null && !userDto.getName().isBlank()) {
             user.setName(userDto.getName());
         }
@@ -126,26 +203,18 @@ public class UserService {
         if (userDto.getPassword() != null && !userDto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         }
-        if (userDto.getPhoto() != null && !userDto.getPhoto().isEmpty()) {
-            try {
-                if (user.getPhotoUrl() != null) {
-                    Path oldImagePath = Paths.get("uploads/users")
-                            .resolve(Paths.get(user.getPhotoUrl()).getFileName().toString());
-                    Files.deleteIfExists(oldImagePath);
-                }
+    }
 
-                String fileName = UUID.randomUUID() + "_" + userDto.getPhoto().getOriginalFilename();
-                Path uploadPath = Paths.get("uploads/users");
 
-                Files.createDirectories(uploadPath);
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(userDto.getPhoto().getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+    /**
+     * Vérification du fichier image
+     */
+    private static void validateImage(MultipartFile file) {
 
-                user.setPhotoUrl("/uploads/users/" + fileName);
+        String contentType = file.getContentType();
 
-            } catch (IOException e) {
-                throw new RuntimeException("Erreur lors du chargement de la photo", e);
-            }
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new RuntimeException("Le fichier doit être une image.");
         }
     }
 }

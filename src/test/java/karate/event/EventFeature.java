@@ -2,7 +2,7 @@ package karate.event;
 
 import com.intuit.karate.junit5.Karate;
 import fr.pmevent.PMEvent;
-import fr.pmevent.configuration.TestSecurityConfig;
+import fr.pmevent.config.TestSecurityConfig;
 import fr.pmevent.service.MailService;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;

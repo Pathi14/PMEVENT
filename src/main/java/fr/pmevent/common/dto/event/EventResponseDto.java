@@ -2,9 +2,10 @@ package fr.pmevent.common.dto.event;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record EventResponseDto(
-        Long id,
+        UUID id,
         String name,
         String location,
         LocalDate start_date,

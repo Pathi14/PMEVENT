@@ -14,7 +14,6 @@ import java.util.List;
 
 public class TestAuthenticationFilter extends OncePerRequestFilter {
 
-
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

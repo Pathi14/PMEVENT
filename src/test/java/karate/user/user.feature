@@ -18,6 +18,21 @@ Scenario: CRUD utilisateur
     And match response.email == 'test@test.com'
     * def userId = response.id
 
+    # Créer un utilisateur
+    Given path '/auth/register'
+    And request
+      """
+      {
+        "name": "Nouveau",
+        "firstname": "Test",
+        "email": "nouveau-user@test.com",
+        "password": "Azerty123!"
+      }
+      """
+    When method POST
+    Then status 200
+    And match response.token == '#string'
+
     # Modifier l'utilisateur
     Given path '/user', userId
     And multipart field firstname = 'Utilisateur Modifié'
