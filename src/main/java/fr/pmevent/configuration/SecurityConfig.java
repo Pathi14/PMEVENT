@@ -19,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 
@@ -28,13 +29,16 @@ public class SecurityConfig {
     private final JwtFilter jwtFilter;
     private final CustomDetailsUserService userDetailsService;
 
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigin;
+
     @Bean
     @Profile("!test")
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of("http://localhost:4200"));
+                    config.setAllowedOrigins(List.of(allowedOrigin));
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setExposedHeaders(List.of("Authorization"));
