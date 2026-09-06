@@ -11,7 +11,7 @@ spring:
       ddl-auto: update
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://pmevent-front.vercel.app}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://pmevent-front.vercel.app/}
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}
