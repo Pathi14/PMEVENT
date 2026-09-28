@@ -4,9 +4,11 @@ import fr.pmevent.common.dto.event.CreateEventDto;
 import fr.pmevent.common.dto.event.EventResponseDto;
 import fr.pmevent.common.dto.event.UpdateEventDto;
 import fr.pmevent.service.EventService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -45,7 +47,7 @@ public class EventController {
             value = "/new-event",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
-    public ResponseEntity<?> createEvent(@ModelAttribute CreateEventDto eventDto) {
+    public ResponseEntity<?> createEvent(@ModelAttribute @Valid CreateEventDto eventDto) {
         try {
             if (eventDto.getName() == null) {
                 return ResponseEntity.badRequest().body("Le nom est obligatoire");
@@ -63,12 +65,25 @@ public class EventController {
     )
     public ResponseEntity<?> updateEvent(
             @PathVariable UUID id,
-            @ModelAttribute UpdateEventDto eventDto
+            @ModelAttribute @Valid UpdateEventDto eventDto
     ) {
         try {
             EventResponseDto event = eventService.updateEvent(id, eventDto);
             return ResponseEntity.ok(event);
         } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping(value = "/{id}/ticket-template", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> saveTicketTemplate(
+            @PathVariable UUID id,
+            @RequestPart("template") MultipartFile template
+    ) {
+        try {
+            String templateUrl = eventService.saveTicketTemplate(id, template);
+            return ResponseEntity.ok(Map.of("ticketTemplateUrl", templateUrl));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }

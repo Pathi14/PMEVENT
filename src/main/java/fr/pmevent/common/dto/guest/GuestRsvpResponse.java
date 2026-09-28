@@ -14,8 +14,9 @@ public class GuestRsvpResponse {
     private UUID guestId;
     private String guestName;
     private String guestFirstname;
+    private String guestCivility;
     private Integer numberPlaces;
-    private Boolean currentResponse; // null si pas encore répondu
+    private Boolean rsvpResponse; // null si pas encore répondu
 
     // Informations sur l'événement
     private String eventName;

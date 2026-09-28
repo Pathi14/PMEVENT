@@ -6,6 +6,7 @@ import fr.pmevent.common.dto.event.UpdateEventDto;
 import fr.pmevent.entity.EventEntity;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
@@ -13,6 +14,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface EventMapper {
     EventEntity toEntity(CreateEventDto dto);
 
+    @Mapping(target = "totalGuestPlaces", ignore = true)
     EventResponseDto toResponse(EventEntity entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

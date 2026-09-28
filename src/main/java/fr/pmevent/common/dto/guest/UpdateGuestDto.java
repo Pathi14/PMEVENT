@@ -9,6 +9,7 @@ public class UpdateGuestDto {
     private String name;
 
     private String firstname;
+    private String civility;
 
     @Email(message = "Email is required")
     private String email;

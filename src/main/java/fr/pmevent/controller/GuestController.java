@@ -99,4 +99,10 @@ public class GuestController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/{id}/absent")
+    public ResponseEntity<?> markAbsent(@PathVariable UUID id) {
+        guestService.markAbsent(id);
+        return ResponseEntity.ok().build();
+    }
+
 }

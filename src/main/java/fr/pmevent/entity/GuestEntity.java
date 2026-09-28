@@ -26,6 +26,7 @@ public class GuestEntity {
     private String name;
 
     private String firstname;
+    private String civility;
 
     @Email(message = "Invalid email format")
     private String email;
@@ -42,6 +43,8 @@ public class GuestEntity {
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private Boolean present = false;
+
+    private Boolean rsvpResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, foreignKey = @ForeignKey(

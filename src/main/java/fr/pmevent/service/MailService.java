@@ -47,7 +47,7 @@ public class MailService {
                       <div style="text-align:center; margin-bottom:20px;">
                         <img src="https://www.pmevent.com/images/logo.png" alt="PM Event" style="width:120px;">
                       </div>
-                      <h2 style="color:#D2691E;">Bonjour %s %s,</h2>
+                      <h2 style="color:#D2691E;">Bonjour %s%s %s,</h2>
                       <p>Vous êtes invité à l'évènement suivant :</p>
                 
                       <table style="width:100%%; border-collapse:collapse;">
@@ -77,6 +77,7 @@ public class MailService {
                   </body>
                 </html>
                 """.formatted(
+                guest.getCivility() != null ? guest.getCivility() + " " : "",
                 guest.getFirstname() != null ? guest.getFirstname() : "",
                 guest.getName() != null ? guest.getName() : "",
                 event.getName(),
@@ -126,7 +127,7 @@ public class MailService {
                       <div style="text-align:center; margin-bottom:20px;">
                         <img src="https://www.pmevent.com/images/logo.png" alt="PM Event" style="width:120px;">
                       </div>
-                      <h2 style="color:#D2691E;">Bonjour %s %s,</h2>
+                      <h2 style="color:#D2691E;">Bonjour %s%s %s,</h2>
                       <p>Vous vous informons que vous êtes invité à l'évènement suivant :</p>
                 
                       <table style="width:100%%; border-collapse:collapse;">
@@ -160,6 +161,7 @@ public class MailService {
                   </body>
                 </html>
                 """.formatted(
+                guest.getCivility() != null ? guest.getCivility() + " " : "",
                 guest.getFirstname() != null ? guest.getFirstname() : "",
                 guest.getName() != null ? guest.getName() : "",
                 event.getName(),

@@ -12,6 +12,7 @@ import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -216,9 +217,16 @@ public class GuestService {
         guestRepository.save(guest);
     }
 
+    public void markAbsent(UUID id) {
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
+        guest.setPresent(false);
+        guestRepository.save(guest);
+    }
+
     /**
      * Informations RSVP
      */
+    @Transactional(readOnly = true)
     public GuestRsvpResponse getRsvpInfo(String token) {
 
         GuestEntity guest = guestRepository.findByQrCodeToken(token).orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
@@ -228,8 +236,9 @@ public class GuestService {
                 guest.getId(),
                 guest.getName(),
                 guest.getFirstname(),
+                guest.getCivility(),
                 guest.getNumber_places(),
-                guest.getPresent(),
+                guest.getRsvpResponse(),
                 event.getName(),
                 event.getDescription(),
                 event.getStart_date(),
@@ -244,7 +253,7 @@ public class GuestService {
      */
     public void updateRsvpResponse(String token, Boolean willAttend) {
         GuestEntity guest = guestRepository.findByQrCodeToken(token).orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
-        guest.setPresent(willAttend);
+        guest.setRsvpResponse(willAttend);
         guestRepository.save(guest);
     }
 
@@ -258,6 +267,7 @@ public class GuestService {
         guest.setEvent(event);
         guest.setName(guestDto.getName().toUpperCase());
         guest.setFirstname(StringUtils.capitalizeWords(guestDto.getFirstname()));
+        guest.setCivility(normalizeCivility(guestDto.getCivility()));
         guest.setEmail(guestDto.getEmail());
         guest.setPhone(guestDto.getPhone());
         guest.setNumber_places(guestDto.getNumber_places());
@@ -276,6 +286,9 @@ public class GuestService {
         if (guestDto.getFirstname() != null && !guestDto.getFirstname().isBlank()) {
             guest.setFirstname(StringUtils.capitalizeWords(guestDto.getFirstname()));
         }
+        if (guestDto.getCivility() != null) {
+            guest.setCivility(normalizeCivility(guestDto.getCivility()));
+        }
         if (guestDto.getEmail() != null && !guestDto.getEmail().isBlank()) {
             guest.setEmail(guestDto.getEmail());
         }
@@ -288,6 +301,22 @@ public class GuestService {
         if (guestDto.getComment() != null && !guestDto.getComment().isBlank()) {
             guest.setComment(guestDto.getComment());
         }
+    }
+
+    private static String normalizeCivility(String civility) {
+        if (civility == null || civility.isBlank()) {
+            return null;
+        }
+        if (civility.trim().equalsIgnoreCase("Mr")) {
+            return "Mr";
+        }
+        if (civility.trim().equalsIgnoreCase("Mme")) {
+            return "Mme";
+        }
+        if (civility.trim().equalsIgnoreCase("Mr et Mme")) {
+            return "Mr et Mme";
+        }
+        throw new IllegalArgumentException("La civilité doit être Mr, Mme ou Mr et Mme.");
     }
 
 

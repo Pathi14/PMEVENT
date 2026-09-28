@@ -14,7 +14,9 @@ public record EventResponseDto(
         boolean publicEvent,
         String imageUrl,
         LocalDateTime create_date,
-        LocalDateTime update_date
+        LocalDateTime update_date,
+        Long totalGuestPlaces,
+        String ticketTemplateUrl
 ) {
 }
 

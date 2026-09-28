@@ -33,6 +33,8 @@ public class EventEntity {
     private String description;
     private String imageUrl;
     private String imagePublicId;
+    private String ticketTemplateUrl;
+    private String ticketTemplatePublicId;
 
     @Column(nullable = false)
     private boolean publicEvent = false;

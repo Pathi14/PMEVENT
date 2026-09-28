@@ -10,6 +10,7 @@ import fr.pmevent.entity.UserEventRoleEntity;
 import fr.pmevent.exception.AlreadyExistsException;
 import fr.pmevent.mapper.EventMapper;
 import fr.pmevent.repository.EventRepository;
+import fr.pmevent.repository.GuestRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -18,6 +19,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
 
@@ -26,6 +28,7 @@ import java.util.*;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final GuestRepository guestRepository;
     private final EventMapper eventMapper;
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
@@ -42,6 +45,7 @@ public class EventService {
         }
 
         EventEntity event = eventMapper.toEntity(eventDto);
+        validateDateRange(event);
         String uploadedImagePublicId = null;
 
         try {
@@ -115,6 +119,7 @@ public class EventService {
         try {
             /* Mise à jour des champs classiques */
             eventMapper.updateEventFromDto(updateEvent, event);
+            validateDateRange(event);
 
             /* Nouvelle image */
             if (updateEvent.getImage() != null &&
@@ -183,6 +188,7 @@ public class EventService {
         checkPermission(event, user, EventRole.CREATOR);
 
         String imagePublicId = event.getImagePublicId();
+        String ticketTemplatePublicId = event.getTicketTemplatePublicId();
 
         /* Suppression des relations associées */
         eventRepository.delete(event);
@@ -202,6 +208,58 @@ public class EventService {
                  */
             }
         }
+
+        if (ticketTemplatePublicId != null) {
+            try {
+                cloudinaryService.deleteImage(ticketTemplatePublicId);
+            } catch (Exception cleanupException) {
+            }
+        }
+    }
+
+    @Transactional
+    public String saveTicketTemplate(UUID eventId, MultipartFile template) {
+        if (template == null || template.isEmpty()) {
+            throw new IllegalArgumentException("Sélectionnez une image pour le modèle de billet.");
+        }
+        if (template.getContentType() == null || !template.getContentType().startsWith("image/")) {
+            throw new IllegalArgumentException("Le modèle de billet doit être une image.");
+        }
+
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EntityNotFoundException("This event doesn't exist"));
+        UserEntity user = getCurrentUser();
+        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
+
+        Map<?, ?> uploadResult = cloudinaryService.uploadImage(template, "pmevent/ticket-templates");
+        String newPublicId = Objects.toString(uploadResult.get("public_id"), "");
+        String newUrl = Objects.toString(uploadResult.get("secure_url"), "");
+        String oldPublicId = event.getTicketTemplatePublicId();
+
+        try {
+            if (newPublicId.isBlank() || newUrl.isBlank()) {
+                throw new IllegalStateException("Le stockage du modèle de billet n'a pas retourné de lien valide.");
+            }
+
+            event.setTicketTemplatePublicId(newPublicId);
+            event.setTicketTemplateUrl(newUrl);
+            eventRepository.saveAndFlush(event);
+        } catch (RuntimeException e) {
+            try {
+                cloudinaryService.deleteImage(newPublicId);
+            } catch (Exception cleanupException) {
+            }
+            throw e;
+        }
+
+        if (oldPublicId != null && !oldPublicId.equals(newPublicId)) {
+            try {
+                cloudinaryService.deleteImage(oldPublicId);
+            } catch (Exception cleanupException) {
+            }
+        }
+
+        return newUrl;
     }
 
     /**
@@ -227,7 +285,9 @@ public class EventService {
                 event.isPublicEvent(),
                 event.getImageUrl(),
                 event.getCreate_date(),
-                event.getUpdate_date()
+                event.getUpdate_date(),
+                guestRepository.sumNumberPlacesByEventId(id),
+                event.getTicketTemplateUrl()
         );
     }
 
@@ -298,6 +358,13 @@ public class EventService {
 
         if (roleOpt.isEmpty() || Arrays.stream(allowedRoles).noneMatch(role -> role == roleOpt.get().getRole())) {
             throw new AccessDeniedException("You do not have permission for this action");
+        }
+    }
+
+    private void validateDateRange(EventEntity event) {
+        if (event.getStart_date() != null && event.getEnd_date() != null
+                && !event.getStart_date().isBefore(event.getEnd_date())) {
+            throw new IllegalArgumentException("La date de fin doit être postérieure à la date de début");
         }
     }
 }

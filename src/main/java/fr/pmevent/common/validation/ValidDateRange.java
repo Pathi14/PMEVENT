@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidDateRange {
-    String message() default "La date de début doit être inférieure à la date de fin";
+    String message() default "La date de fin doit être postérieure à la date de début";
 
     Class<?>[] groups() default {};
 
