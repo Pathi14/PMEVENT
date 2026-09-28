@@ -2,10 +2,13 @@ package fr.pmevent.controller;
 
 import fr.pmevent.common.dto.authentication.AuthResponse;
 import fr.pmevent.common.dto.authentication.LoginDto;
+import fr.pmevent.common.dto.authentication.PasswordResetConfirmation;
+import fr.pmevent.common.dto.authentication.PasswordResetRequest;
 import fr.pmevent.common.dto.authentication.RegisterDto;
 import fr.pmevent.configuration.jwt.JwtUtil;
 import fr.pmevent.entity.UserEntity;
 import fr.pmevent.service.UserService;
+import fr.pmevent.service.PasswordResetService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -30,6 +34,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final AuthenticationManager authenticationManager;
+    private final PasswordResetService passwordResetService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterDto userDto) {
@@ -50,5 +55,27 @@ public class AuthController {
         String token = jwtUtil.generateToken(userDetails);
 
         return ResponseEntity.ok(new AuthResponse(token));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> requestPasswordReset(
+            @RequestBody @Valid PasswordResetRequest request
+    ) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.ok(Map.of(
+                "message", "Si un compte correspond à cette adresse, un lien de réinitialisation a été envoyé."
+        ));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(
+            @RequestBody @Valid PasswordResetConfirmation request
+    ) {
+        try {
+            passwordResetService.resetPassword(request.token(), request.password());
+            return ResponseEntity.ok(Map.of("message", "Votre mot de passe a été modifié."));
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("error", exception.getMessage()));
+        }
     }
 }

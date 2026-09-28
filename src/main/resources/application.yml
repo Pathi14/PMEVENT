@@ -17,3 +17,6 @@ logging:
     org.springframework.security: INFO
     org.springframework.web: INFO
     fr.pmevent: INFO
+
+frontend:
+  url: ${FRONTEND_URL:http://localhost:4200}

@@ -31,6 +31,41 @@ public class MailService {
 
     private final QrCodeService qrCodeService;
 
+    public void sendPasswordResetEmail(String recipient, String resetUrl) {
+        Email from = new Email(sender);
+        Email to = new Email(recipient);
+        String htmlContent = """
+                <html>
+                  <body style="font-family: Arial, sans-serif; background-color: #faf4f0; color: #392d29; padding: 24px;">
+                    <div style="max-width: 560px; margin: auto; background: #ffffff; border: 1px solid #eadbd3; border-radius: 12px; padding: 32px;">
+                      <h2 style="color: #c84d2d;">Réinitialisation de votre mot de passe</h2>
+                      <p>Une demande de changement de mot de passe a été effectuée pour votre compte PM Event.</p>
+                      <p style="margin: 28px 0;">
+                        <a href="%s" style="display: inline-block; background: #d85b3d; color: #ffffff; text-decoration: none; padding: 12px 20px; border-radius: 8px; font-weight: bold;">
+                          Choisir un nouveau mot de passe
+                        </a>
+                      </p>
+                      <p>Ce lien expire dans 30 minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>
+                    </div>
+                  </body>
+                </html>
+                """.formatted(resetUrl);
+
+        Mail mail = new Mail(from, "Réinitialisation de votre mot de passe PM Event", to,
+                new Content("text/html", htmlContent));
+        SendGrid sg = new SendGrid(apiKey);
+        Request request = new Request();
+
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            sg.api(request);
+        } catch (IOException exception) {
+            System.err.println("Erreur lors de l'envoi de l'e-mail de réinitialisation : " + exception.getMessage());
+        }
+    }
+
     public void sendGuestInvitationEmail(GuestEntity guest, EventEntity event) {
 
         String subject = "Invitation à l'évènement : " + event.getName();
