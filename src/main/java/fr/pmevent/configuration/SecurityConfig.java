@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final CustomDetailsUserService userDetailsService;
 
     @Value("${cors.allowed-origins}")
-    private String allowedOrigin;
+    private List<String> allowedOrigins;
 
     @Bean
     @Profile("!test")
@@ -38,7 +38,7 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
-                    config.setAllowedOrigins(List.of(allowedOrigin));
+                    config.setAllowedOrigins(allowedOrigins);
                     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     config.setAllowedHeaders(List.of("*"));
                     config.setExposedHeaders(List.of("Authorization"));
