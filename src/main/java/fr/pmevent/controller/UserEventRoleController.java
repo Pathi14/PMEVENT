@@ -18,15 +18,15 @@ public class UserEventRoleController {
     private UserEventRoleService userEventRoleService;
 
     @PostMapping("/assign-role")
-    ResponseEntity<?> AssignRoleToUser(@RequestBody @Valid AssignRoleDto assignRole) {
+    ResponseEntity<?> assignPermissions(@RequestBody @Valid AssignRoleDto assignRole) {
         try {
-            if (assignRole.getEventId() == null || assignRole.getUserId() == null || assignRole.getRole() == null) {
+            if (assignRole.getEventId() == null || assignRole.getUserId() == null) {
                 return ResponseEntity.badRequest().body("Requête invalide");
             }
 
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
-            userEventRoleService.AssignRoleToUSer(currentUserEmail, assignRole);
+            userEventRoleService.assignPermissions(currentUserEmail, assignRole);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -39,7 +39,7 @@ public class UserEventRoleController {
         try {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
 
-            userEventRoleService.removeRoleFromUser(currentUserEmail, eventId, userId);
+            userEventRoleService.removePermissions(currentUserEmail, eventId, userId);
             return ResponseEntity.ok().build();
 
         } catch (RuntimeException e) {
@@ -50,7 +50,7 @@ public class UserEventRoleController {
     @GetMapping("/event/{eventId}")
     public ResponseEntity<?> getRolesByEvent(@PathVariable UUID eventId) {
         try {
-            return ResponseEntity.ok(userEventRoleService.getRolesByEvent(eventId));
+            return ResponseEntity.ok(userEventRoleService.getPermissionsByEvent(eventId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -60,7 +60,7 @@ public class UserEventRoleController {
     public ResponseEntity<?> getMyRoleForEvent(@PathVariable UUID eventId) {
         try {
             String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-            return ResponseEntity.ok(userEventRoleService.getMyRoleForEvent(currentUserEmail, eventId));
+            return ResponseEntity.ok(userEventRoleService.getMyPermissionsForEvent(currentUserEmail, eventId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

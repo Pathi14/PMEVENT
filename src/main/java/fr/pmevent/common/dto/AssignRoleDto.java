@@ -1,6 +1,5 @@
 package fr.pmevent.common.dto;
 
-import fr.pmevent.common.enums.EventRole;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -15,5 +14,14 @@ public class AssignRoleDto {
     private UUID eventId;
 
     @NotNull
-    private EventRole role;
+    private Boolean canModifyEvent;
+
+    @NotNull
+    private Boolean canDeleteEvent;
+
+    @NotNull
+    private Boolean canManageGuests;
+
+    @NotNull
+    private Boolean canManageRoles;
 }

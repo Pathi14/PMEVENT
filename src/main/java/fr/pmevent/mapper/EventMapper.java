@@ -12,11 +12,13 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring")
 public interface EventMapper {
+    @Mapping(target = "rsvpDeadline", ignore = true)
     EventEntity toEntity(CreateEventDto dto);
 
     @Mapping(target = "totalGuestPlaces", ignore = true)
     EventResponseDto toResponse(EventEntity entity);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "rsvpDeadline", ignore = true)
     void updateEventFromDto(UpdateEventDto dto, @MappingTarget EventEntity entity);
 }

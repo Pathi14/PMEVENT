@@ -9,7 +9,7 @@ import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.UserEventRoleRepository;
 import fr.pmevent.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.stereotype.Repository;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -19,121 +19,118 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@Repository
 @AllArgsConstructor
 public class UserEventRoleService {
     private final UserEventRoleRepository userEventRoleRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EventPermissionService eventPermissionService;
 
-    /**
-     * Assigne un rôle à un utilisateur pour un évènement.
-     * Si un rôle existait déjà, il est mis à jour.
-     * Seuls le CREATOR les EDITORs de l'évènement peut attribuer un rôle.
-     */
-    public void AssignRoleToUSer(String userEmail, AssignRoleDto assignRoleDto) {
+    public void assignPermissions(String userEmail, AssignRoleDto assignment) {
+        UserEntity currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+        EventEntity event = eventRepository.findById(assignment.getEventId())
+                .orElseThrow(() -> new RuntimeException("Événement introuvable."));
 
-        //Rechercher l'utilisateur auquel on veut attribuer le rôle et l'évènement concerné
-        UserEntity targetUser = userRepository.findById(assignRoleDto.getUserId())
-                .orElseThrow(() -> new RuntimeException("You can assign role if user is not valid"));
-        EventEntity event = eventRepository.findById(assignRoleDto.getEventId())
-                .orElseThrow(() -> new RuntimeException("You can assign role if event is not valid"));
+        UserEventRoleEntity currentMembership = userEventRoleRepository.findByUserAndEvent(currentUser, event)
+                .orElseThrow(() -> new RuntimeException("Vous n'êtes pas membre de cet événement."));
+        requireRoleManagement(currentMembership);
 
-        //Vérifier que c'est bien le créateur de l'évènement qui veut attribuer un roôle
-        UserEntity creator = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
-
-        UserEventRoleEntity currentUserRole = userEventRoleRepository
-                .findByUserAndEvent(creator, event)
-                .orElseThrow(() -> new RuntimeException("You are not the creator of this event"));
-
-        if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
-            throw new RuntimeException("Seuls le créateur et les éditeurs peuvent attribuer des rôles");
+        UserEntity targetUser = userRepository.findById(assignment.getUserId())
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new RuntimeException("Vous ne pouvez pas modifier vos propres autorisations.");
         }
 
-        // Ne pas modifier le rôle du créateur
-        UserEventRoleEntity targetRole = userEventRoleRepository
-                .findByUserAndEvent(targetUser, event)
-                .orElse(null);
-
-        if (targetRole != null && targetRole.getRole() == EventRole.CREATOR) {
-            throw new RuntimeException("Le rôle du créateur de l'évènement ne peut pas être modifié.");
+        UserEventRoleEntity membership = userEventRoleRepository.findByUserAndEvent(targetUser, event)
+                .orElseGet(UserEventRoleEntity::new);
+        if (membership.getRole() == EventRole.CREATOR) {
+            throw new RuntimeException("Les autorisations du créateur ne peuvent pas être modifiées.");
         }
 
-        //Vérifier si l'utilisateur à un rôle alors faire une mise à jour sinon lui attribuer un rôle
-        UserEventRoleEntity existingRole = userEventRoleRepository
-                .findByUserAndEvent(targetUser, event)
-                .orElse(null);
-
-        if (existingRole != null) {
-            existingRole.setRole(assignRoleDto.getRole());
-            userEventRoleRepository.save(existingRole);
-        } else {
-            UserEventRoleEntity userEventRole = new UserEventRoleEntity();
-            userEventRole.setUser(targetUser);
-            userEventRole.setEvent(event);
-            userEventRole.setRole(assignRoleDto.getRole());
-            userEventRoleRepository.save(userEventRole);
-        }
+        membership.setUser(targetUser);
+        membership.setEvent(event);
+        membership.setRole(EventRole.VIEWER);
+        membership.setCanModifyEvent(assignment.getCanModifyEvent());
+        membership.setCanDeleteEvent(assignment.getCanDeleteEvent());
+        membership.setCanManageGuests(assignment.getCanManageGuests());
+        membership.setCanManageRoles(assignment.getCanManageRoles());
+        userEventRoleRepository.save(membership);
     }
 
-    /**
-     * Supprime un rôle attribué à un utilisateur sur un évènement.
-     * Seuls le CREATOR et les EDITORs peut le faire.
-     */
-    public void removeRoleFromUser(String userEmail, UUID eventId, UUID userId) {
+    public void removePermissions(String userEmail, UUID eventId, UUID userId) {
         EventEntity event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-
-        UserEntity creator = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Creator not found"));
-
-        UserEventRoleEntity currentUserRole = userEventRoleRepository
-                .findByUserAndEvent(creator, event)
-                .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
-
-        if (currentUserRole.getRole() != EventRole.CREATOR && currentUserRole.getRole() != EventRole.EDITOR) {
-            throw new RuntimeException("Seuls le créateur et les éditeurs peuvent rétirer des rôles");
-        }
+                .orElseThrow(() -> new RuntimeException("Événement introuvable."));
+        UserEntity currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+        UserEventRoleEntity currentMembership = userEventRoleRepository.findByUserAndEvent(currentUser, event)
+                .orElseThrow(() -> new RuntimeException("Vous n'êtes pas membre de cet événement."));
+        requireRoleManagement(currentMembership);
 
         UserEntity targetUser = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+        if (currentUser.getId().equals(targetUser.getId())) {
+            throw new RuntimeException("Vous ne pouvez pas retirer vos propres autorisations.");
+        }
 
-        UserEventRoleEntity role = userEventRoleRepository
-                .findByUserAndEvent(targetUser, event)
-                .orElseThrow(() -> new RuntimeException("This user has no role for this event"));
+        UserEventRoleEntity targetMembership = userEventRoleRepository.findByUserAndEvent(targetUser, event)
+                .orElseThrow(() -> new RuntimeException("Cet utilisateur n'a aucun accès à l'événement."));
+        if (targetMembership.getRole() == EventRole.CREATOR) {
+            throw new RuntimeException("Les autorisations du créateur ne peuvent pas être retirées.");
+        }
 
-        userEventRoleRepository.delete(role);
+        userEventRoleRepository.delete(targetMembership);
     }
 
-    /**
-     * Retourne la liste des rôles d’un évènement (visible uniquement pour CREATOR et EDITOR)
-     */
-    public List<Map<String, Object>> getRolesByEvent(UUID eventId) {
+    public List<Map<String, Object>> getPermissionsByEvent(UUID eventId) {
         EventEntity event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
+                .orElseThrow(() -> new RuntimeException("Événement introuvable."));
+        UserEntity currentUser = getCurrentUser();
+        UserEventRoleEntity currentMembership = userEventRoleRepository.findByUserAndEvent(currentUser, event)
+                .orElseThrow(() -> new RuntimeException("Vous n'êtes pas membre de cet événement."));
+        requireRoleManagement(currentMembership);
 
-        List<UserEventRoleEntity> roles = userEventRoleRepository.findByEvent(event);
-
-        return roles.stream().map(role -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("userId", role.getUser().getId());
-            map.put("userEmail", role.getUser().getEmail());
-            map.put("role", role.getRole());
-            return map;
-        }).collect(Collectors.toList());
+        return userEventRoleRepository.findByEvent(event).stream().map(this::toPermissionResponse)
+                .collect(Collectors.toList());
     }
 
-    /**
-     * Retourne le rôle du user connecté pour un évènement.
-     */
-    public Map<String, String> getMyRoleForEvent(String userEmail, UUID eventId) {
+    public Map<String, Object> getMyPermissionsForEvent(String userEmail, UUID eventId) {
         UserEntity user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
         EventEntity event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-        UserEventRoleEntity role = userEventRoleRepository.findByUserAndEvent(user, event)
-                .orElseThrow(() -> new RuntimeException("You are not assigned to this event"));
-        return Map.of("role", role.getRole().name());
+                .orElseThrow(() -> new RuntimeException("Événement introuvable."));
+        UserEventRoleEntity membership = userEventRoleRepository.findByUserAndEvent(user, event)
+                .orElseThrow(() -> new RuntimeException("Vous n'êtes pas membre de cet événement."));
+        return toPermissionResponse(membership);
+    }
+
+    private Map<String, Object> toPermissionResponse(UserEventRoleEntity membership) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", membership.getUser().getId());
+        response.put("userName", membership.getUser().getName());
+        response.put("userFirstname", membership.getUser().getFirstname());
+        response.put("userEmail", membership.getUser().getEmail());
+        response.put("role", membership.getRole() == EventRole.CREATOR ? "CREATOR" : "MEMBER");
+        response.put("canModifyEvent", eventPermissionService.hasPermission(
+                membership, EventPermissionService.Permission.MODIFY_EVENT));
+        response.put("canDeleteEvent", eventPermissionService.hasPermission(
+                membership, EventPermissionService.Permission.DELETE_EVENT));
+        response.put("canManageGuests", eventPermissionService.hasPermission(
+                membership, EventPermissionService.Permission.MANAGE_GUESTS));
+        response.put("canManageRoles", eventPermissionService.hasPermission(
+                membership, EventPermissionService.Permission.MANAGE_ROLES));
+        return response;
+    }
+
+    private void requireRoleManagement(UserEventRoleEntity membership) {
+        if (!eventPermissionService.hasPermission(membership, EventPermissionService.Permission.MANAGE_ROLES)) {
+            throw new RuntimeException("Vous n'avez pas l'autorisation de gérer les accès de cet événement.");
+        }
+    }
+
+    private UserEntity getCurrentUser() {
+        String currentEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
     }
 }

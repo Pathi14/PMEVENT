@@ -3,6 +3,7 @@ package fr.pmevent.service;
 import fr.pmevent.common.dto.event.CreateEventDto;
 import fr.pmevent.common.dto.event.EventResponseDto;
 import fr.pmevent.common.dto.event.UpdateEventDto;
+import fr.pmevent.common.dto.event.UpdateRsvpDeadlineDto;
 import fr.pmevent.common.enums.EventRole;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.UserEntity;
@@ -33,6 +34,7 @@ public class EventService {
     private final UserRepository userRepository;
     private final UserEventRoleRepository userEventRoleRepository;
     private final CloudinaryService cloudinaryService;
+    private final EventPermissionService eventPermissionService;
 
     /**
      * Création d'un événement.
@@ -72,6 +74,10 @@ public class EventService {
             userEventRole.setUser(user);
             userEventRole.setEvent(eventCreated);
             userEventRole.setRole(EventRole.CREATOR);
+            userEventRole.setCanModifyEvent(true);
+            userEventRole.setCanDeleteEvent(true);
+            userEventRole.setCanManageGuests(true);
+            userEventRole.setCanManageRoles(true);
 
             userEventRoleRepository.save(userEventRole);
 
@@ -103,7 +109,7 @@ public class EventService {
 
         EventEntity event = eventRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("This event doesn't exist"));
         UserEntity user = getCurrentUser();
-        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
+        eventPermissionService.requirePermission(event, user, EventPermissionService.Permission.MODIFY_EVENT);
 
         /* Vérification du nom */
         if (updateEvent.getName() != null && eventRepository.existsByName(updateEvent.getName()) && !updateEvent.getName().equals(event.getName())) {
@@ -177,6 +183,17 @@ public class EventService {
         }
     }
 
+    @Transactional
+    public EventResponseDto updateRsvpDeadline(UUID id, UpdateRsvpDeadlineDto request) {
+        EventEntity event = eventRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("This event doesn't exist"));
+        UserEntity user = getCurrentUser();
+        eventPermissionService.requirePermission(event, user, EventPermissionService.Permission.MODIFY_EVENT);
+
+        event.setRsvpDeadline(request.rsvpDeadline());
+        return eventMapper.toResponse(eventRepository.save(event));
+    }
+
     /**
      * Suppression d'un événement.
      */
@@ -185,7 +202,7 @@ public class EventService {
 
         EventEntity event = eventRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("This event doesn't exist"));
         UserEntity user = getCurrentUser();
-        checkPermission(event, user, EventRole.CREATOR);
+        eventPermissionService.requirePermission(event, user, EventPermissionService.Permission.DELETE_EVENT);
 
         String imagePublicId = event.getImagePublicId();
         String ticketTemplatePublicId = event.getTicketTemplatePublicId();
@@ -229,7 +246,7 @@ public class EventService {
         EventEntity event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new EntityNotFoundException("This event doesn't exist"));
         UserEntity user = getCurrentUser();
-        checkPermission(event, user, EventRole.CREATOR, EventRole.EDITOR);
+        eventPermissionService.requirePermission(event, user, EventPermissionService.Permission.MODIFY_EVENT);
 
         Map<?, ?> uploadResult = cloudinaryService.uploadImage(template, "pmevent/ticket-templates");
         String newPublicId = Objects.toString(uploadResult.get("public_id"), "");
@@ -281,6 +298,7 @@ public class EventService {
                 event.getLocation(),
                 event.getStart_date(),
                 event.getEnd_date(),
+                event.getRsvpDeadline(),
                 event.getDescription(),
                 event.isPublicEvent(),
                 event.getImageUrl(),
@@ -327,14 +345,9 @@ public class EventService {
     public List<EventResponseDto> getAllEditorCreatorEvents() {
 
         UserEntity user = getCurrentUser();
-        List<EventRole> roles = List.of(
-                EventRole.CREATOR,
-                EventRole.EDITOR
-        );
-
-        return eventRepository
-                .findEventsByUserAndRole(user, roles)
-                .stream()
+        return userEventRoleRepository.findByUserWithEvent(user).stream()
+                .filter(eventPermissionService::hasAnyAdministrativePermission)
+                .map(UserEventRoleEntity::getEvent)
                 .map(eventMapper::toResponse)
                 .toList();
     }

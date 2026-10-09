@@ -22,6 +22,8 @@ public class GuestRsvpResponse {
     private String eventName;
     private String eventDescription;
     private LocalDate eventDate;
+    private LocalDate eventEndDate;
+    private LocalDate rsvpDeadline;
     private String eventLocation;
     private String eventImageUrl;
 }

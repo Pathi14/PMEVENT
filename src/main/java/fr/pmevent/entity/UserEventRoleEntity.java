@@ -40,4 +40,9 @@ public class UserEventRoleEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventRole role;
+
+    private Boolean canModifyEvent;
+    private Boolean canDeleteEvent;
+    private Boolean canManageGuests;
+    private Boolean canManageRoles;
 }

@@ -7,14 +7,20 @@ import fr.pmevent.common.dto.guest.UpdateGuestDto;
 import fr.pmevent.common.utils.StringUtils;
 import fr.pmevent.entity.EventEntity;
 import fr.pmevent.entity.GuestEntity;
+import fr.pmevent.entity.UserEntity;
 import fr.pmevent.mapper.GuestMapper;
 import fr.pmevent.repository.EventRepository;
 import fr.pmevent.repository.GuestRepository;
+import fr.pmevent.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,14 +31,19 @@ public class GuestService {
 
     private final GuestRepository guestRepository;
     private final EventRepository eventRepository;
+    private final UserRepository userRepository;
     private final GuestMapper guestMapper;
     private final MailService mailService;
     private final CloudinaryService cloudinaryService;
+    private final EventPermissionService eventPermissionService;
 
     /**
      * Récupérer tous les invités d'un événement
      */
     public List<GuestResponse> getAllGuestOfOneEvent(UUID eventId) {
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Événement introuvable."));
+        requireGuestManagement(event);
         List<GuestEntity> guests = guestRepository.findByEventId(eventId);
         return guests.stream().map(guestMapper::toResponse).toList();
     }
@@ -42,6 +53,7 @@ public class GuestService {
      */
     public GuestResponse getGuestById(UUID id) {
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest doesn't exist."));
+        requireGuestManagement(guest.getEvent());
         return guestMapper.toResponse(guest);
     }
 
@@ -49,7 +61,9 @@ public class GuestService {
      * Récupérer l'entité Guest
      */
     public GuestEntity getGuestEntity(UUID id) {
-        return guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest doesn't exist"));
+        GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest doesn't exist"));
+        requireGuestManagement(guest.getEvent());
+        return guest;
     }
 
     /**
@@ -58,6 +72,7 @@ public class GuestService {
     public GuestResponse addGuest(UUID eventId, AddGuestDto guestDto) {
 
         EventEntity event = eventRepository.findById(eventId).orElseThrow(() -> new RuntimeException("You cannot add guest if the event does not exist."));
+        requireGuestManagement(event);
         GuestEntity guest = mapToEntity(guestDto, event);
 
         guest.setQrCodeToken(UUID.randomUUID().toString());
@@ -109,6 +124,7 @@ public class GuestService {
     public GuestResponse updateGuest(UUID id, UpdateGuestDto guestDto) {
 
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest does not exist"));
+        requireGuestManagement(guest.getEvent());
 
         /* Sauvegarder l'ancien public_id avant toute modification. */
         String oldPublicId = guest.getPhotoPublicId();
@@ -165,6 +181,7 @@ public class GuestService {
     public void removeGuest(UUID id) {
 
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
+        requireGuestManagement(guest.getEvent());
 
         /* Supprimer d'abord l'image Cloudinary */
         if (guest.getPhotoPublicId() != null && !guest.getPhotoPublicId().isBlank()) {
@@ -182,6 +199,7 @@ public class GuestService {
 
         GuestEntity guest = guestRepository.findById(guestId).orElseThrow(() -> new RuntimeException("Invité introuvable"));
         EventEntity event = guest.getEvent();
+        requireGuestManagement(event);
         mailService.sendGuestReminderEmail(guest, event);
     }
 
@@ -200,6 +218,7 @@ public class GuestService {
 
         GuestEntity guest = guestRepository.findById(guestId)
                 .orElseThrow(() -> new RuntimeException("Invité introuvable"));
+        requireGuestManagement(guest.getEvent());
 
         if (!guest.getQrCodeToken().equals(token)) {
             throw new RuntimeException("QR Code invalide");
@@ -213,12 +232,14 @@ public class GuestService {
      */
     public void markPresent(UUID id) {
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
+        requireGuestManagement(guest.getEvent());
         guest.setPresent(true);
         guestRepository.save(guest);
     }
 
     public void markAbsent(UUID id) {
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("Invité introuvable"));
+        requireGuestManagement(guest.getEvent());
         guest.setPresent(false);
         guestRepository.save(guest);
     }
@@ -242,6 +263,8 @@ public class GuestService {
                 event.getName(),
                 event.getDescription(),
                 event.getStart_date(),
+                event.getEnd_date(),
+                event.getRsvpDeadline(),
                 event.getLocation(),
                 event.getImageUrl()
         );
@@ -253,8 +276,23 @@ public class GuestService {
      */
     public void updateRsvpResponse(String token, Boolean willAttend) {
         GuestEntity guest = guestRepository.findByQrCodeToken(token).orElseThrow(() -> new RuntimeException("Lien invalide ou expiré"));
+        LocalDate deadline = guest.getEvent().getRsvpDeadline();
+        if (deadline != null && LocalDate.now().isAfter(deadline)) {
+            throw new ResponseStatusException(HttpStatus.GONE, "La date limite de réponse RSVP est dépassée.");
+        }
         guest.setRsvpResponse(willAttend);
         guestRepository.save(guest);
+    }
+
+    private void requireGuestManagement(EventEntity event) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+        eventPermissionService.requirePermission(
+                event,
+                user,
+                EventPermissionService.Permission.MANAGE_GUESTS
+        );
     }
 
 

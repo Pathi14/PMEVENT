@@ -3,6 +3,7 @@ package fr.pmevent.controller;
 import fr.pmevent.common.dto.event.CreateEventDto;
 import fr.pmevent.common.dto.event.EventResponseDto;
 import fr.pmevent.common.dto.event.UpdateEventDto;
+import fr.pmevent.common.dto.event.UpdateRsvpDeadlineDto;
 import fr.pmevent.service.EventService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -70,6 +71,18 @@ public class EventController {
         try {
             EventResponseDto event = eventService.updateEvent(id, eventDto);
             return ResponseEntity.ok(event);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/rsvp-deadline")
+    public ResponseEntity<?> updateRsvpDeadline(
+            @PathVariable UUID id,
+            @RequestBody UpdateRsvpDeadlineDto request
+    ) {
+        try {
+            return ResponseEntity.ok(eventService.updateRsvpDeadline(id, request));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

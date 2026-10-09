@@ -30,6 +30,7 @@ public class EventEntity {
     private String location;
     private LocalDate start_date;
     private LocalDate end_date;
+    private LocalDate rsvpDeadline;
     private String description;
     private String imageUrl;
     private String imagePublicId;

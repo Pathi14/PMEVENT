@@ -10,6 +10,7 @@ public record EventResponseDto(
         String location,
         LocalDate start_date,
         LocalDate end_date,
+        LocalDate rsvpDeadline,
         String description,
         boolean publicEvent,
         String imageUrl,
@@ -19,4 +20,3 @@ public record EventResponseDto(
         String ticketTemplateUrl
 ) {
 }
-
