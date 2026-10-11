@@ -31,6 +31,7 @@ public class EventEntity {
     private LocalDate start_date;
     private LocalDate end_date;
     private LocalDate rsvpDeadline;
+    @Column(columnDefinition = "TEXT")
     private String description;
     private String imageUrl;
     private String imagePublicId;
