@@ -18,6 +18,11 @@ public interface GuestRepository extends JpaRepository<GuestEntity, UUID> {
     @Query("SELECT COALESCE(SUM(guest.number_places), 0) FROM GuestEntity guest WHERE guest.event.id = :eventId")
     long sumNumberPlacesByEventId(@Param("eventId") UUID eventId);
 
+    @Query("SELECT COALESCE(SUM(guest.number_places), 0) FROM GuestEntity guest WHERE guest.guestGroup.id = :groupId")
+    long sumNumberPlacesByGuestGroupId(@Param("groupId") UUID groupId);
+
+    List<GuestEntity> findByGuestGroupIdOrderByNameAscFirstnameAsc(UUID groupId);
+
     void deleteAllByEvent(EventEntity event);
 
     Optional<GuestEntity> findByQrCodeToken(String qrCodeToken);

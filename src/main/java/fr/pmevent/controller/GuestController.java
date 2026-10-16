@@ -89,8 +89,18 @@ public class GuestController {
     @PostMapping("/verify-qr")
     public ResponseEntity<?> verifyQr(@RequestBody Map<String, String> payload) {
         String code = payload.get("code");
+        String rawEventId = payload.get("eventId");
+        if (rawEventId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Événement de contrôle manquant."));
+        }
 
-        return ResponseEntity.ok(guestService.verifyQrCode(code));
+        UUID eventId;
+        try {
+            eventId = UUID.fromString(rawEventId);
+        } catch (IllegalArgumentException exception) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Événement de contrôle invalide."));
+        }
+        return ResponseEntity.ok(guestService.verifyQrCode(eventId, code));
     }
 
     @PostMapping("/{id}/present")

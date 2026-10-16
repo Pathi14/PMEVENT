@@ -47,6 +47,16 @@ public class GuestEntity {
     private Boolean rsvpResponse;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "guest_group_id",
+            foreignKey = @ForeignKey(
+                    name = "fk_guest_group",
+                    foreignKeyDefinition = "FOREIGN KEY (guest_group_id) REFERENCES guest_groups(id) ON DELETE SET NULL"
+            )
+    )
+    private GuestGroupEntity guestGroup;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, foreignKey = @ForeignKey(
             name = "fk_guest_event",
             foreignKeyDefinition = "FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE"

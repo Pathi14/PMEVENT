@@ -121,6 +121,7 @@ public class GuestService {
     /**
      * Modifier un invité
      */
+    @Transactional
     public GuestResponse updateGuest(UUID id, UpdateGuestDto guestDto) {
 
         GuestEntity guest = guestRepository.findById(id).orElseThrow(() -> new RuntimeException("This guest does not exist"));
@@ -129,8 +130,20 @@ public class GuestService {
         /* Sauvegarder l'ancien public_id avant toute modification. */
         String oldPublicId = guest.getPhotoPublicId();
         String newPublicId = null;
+        Integer oldNumberPlaces = guest.getNumber_places();
 
         try {
+
+            if (guest.getGuestGroup() != null) {
+                long occupiedBeforeUpdate = guestRepository.sumNumberPlacesByGuestGroupId(guest.getGuestGroup().getId());
+                long occupiedByOthers = occupiedBeforeUpdate - oldNumberPlaces;
+                int updatedNumberPlaces = guestDto.getNumber_places() != null && guestDto.getNumber_places() > 0
+                        ? guestDto.getNumber_places()
+                        : oldNumberPlaces;
+                if (occupiedByOthers + updatedNumberPlaces > guest.getGuestGroup().getMaxPeople()) {
+                    throw new IllegalArgumentException("La modification dépasse la capacité maximale du groupe.");
+                }
+            }
 
             updateFields(guestDto, guest);
 
@@ -206,22 +219,33 @@ public class GuestService {
     /**
      * Vérification du QR Code
      */
-    public Map<String, Object> verifyQrCode(String code) {
+    public Map<String, Object> verifyQrCode(UUID eventId, String code) {
+        EventEntity event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Événement introuvable."));
+        requireGuestManagement(event);
 
-        String[] parts = code.split(":");
-        if (parts.length != 3) {
-            throw new RuntimeException("QR Code invalide");
+        if (code == null) {
+            throw new IllegalArgumentException("QR Code invalide.");
+        }
+        String[] parts = code.split(":", -1);
+        if (parts.length != 3 || !"GUEST".equals(parts[0]) || parts[2].isBlank()) {
+            throw new IllegalArgumentException("QR Code invalide.");
         }
 
-        UUID guestId = UUID.fromString(parts[1]);
-        String token = parts[2];
+        UUID guestId;
+        try {
+            guestId = UUID.fromString(parts[1]);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("QR Code invalide.", exception);
+        }
 
         GuestEntity guest = guestRepository.findById(guestId)
-                .orElseThrow(() -> new RuntimeException("Invité introuvable"));
-        requireGuestManagement(guest.getEvent());
-
-        if (!guest.getQrCodeToken().equals(token)) {
-            throw new RuntimeException("QR Code invalide");
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invité introuvable."));
+        if (!eventId.equals(guest.getEvent().getId())) {
+            throw new IllegalArgumentException("Cet invité n'appartient pas à l'événement en cours.");
+        }
+        if (!parts[2].equals(guest.getQrCodeToken())) {
+            throw new IllegalArgumentException("QR Code invalide.");
         }
 
         return Map.of("valid", true, "guest", guestMapper.toResponse(guest));
